@@ -40,7 +40,8 @@ void exchange_init(exchange_t& exchange, std::string const& server_url, std::str
 	exchange.api_token = api_token;
 
 	nlohmann::json result;
-	http_get(result, server_url, "/config?api_token=" + httplib::encode_uri_component(exchange.api_token), 200);
+	http_get(result, exchange.server_url, "/config?api_token=" + httplib::encode_uri_component(exchange.api_token),
+		200);
 	exchange.renderer_internal_width = result["width"];
 	exchange.renderer_internal_height = result["height"];
 	exchange.renderer_internal_fov_y = result["fov_y"];
@@ -193,7 +194,8 @@ void exchange_run_inpainting(exchange_t& exchange, u32 const chunk_id, std::stri
 	};
 
 	std::string response_str;
-	http_post(response_str, "http://127.0.0.1:8000", "/inpaint", items, 200);
+	http_post(response_str, exchange.server_url,
+		"/inpaint?api_token=" + httplib::encode_uri_component(exchange.api_token), items, 200);
 	int out_w = 0, out_h = 0, out_chans = 0;
 	u8* decoded = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(response_str.data()),
 		static_cast<int>(response_str.size()), &out_w, &out_h, &out_chans, 3);
@@ -218,7 +220,8 @@ void exchange_run_depth_estimation(exchange_t& exchange, u32 const chunk_id) {
 	};
 
 	std::string response_str;
-	http_post(response_str, "http://127.0.0.1:8000", "/depth", items, 200);
+	http_post(response_str, exchange.server_url,
+		"/depth?api_token=" + httplib::encode_uri_component(exchange.api_token), items, 200);
 	chunk.depth_out.assign(reinterpret_cast<f32*>(response_str.data()),
 		reinterpret_cast<f32*>(response_str.data()) + (response_str.size() / sizeof(f32)));
 }
