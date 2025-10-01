@@ -54,6 +54,7 @@ GLuint paint_result_tool_t::get_viewport_texture(app_t& app, u32 const layer) {
 		return colors_tex;
 	} else {
 		assert_release(false);
+		return 0;
 	}
 }
 
@@ -64,6 +65,7 @@ GLuint paint_result_tool_t::get_viewport_texture_width(app_t& app, u32 const lay
 		return colors_tex_width;
 	} else {
 		assert_release(false);
+		return 0;
 	}
 }
 
@@ -74,6 +76,7 @@ GLuint paint_result_tool_t::get_viewport_texture_height(app_t& app, u32 const la
 		return colors_tex_width;
 	} else {
 		assert_release(false);
+		return 0;
 	}
 }
 

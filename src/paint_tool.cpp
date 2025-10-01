@@ -152,6 +152,7 @@ GLuint paint_tool_t::get_viewport_texture(app_t& app, u32 const layer) {
 		return brush_preview_pass.internal_output_descriptors["o_dest"].texture;
 	} else {
 		assert_release(false);
+		return 0;
 	}
 }
 
@@ -165,6 +166,7 @@ GLuint paint_tool_t::get_viewport_texture_width(app_t& app, u32 const layer) {
 		return brush_preview_pass.width;
 	} else {
 		assert_release(false);
+		return 0;
 	}
 }
 
@@ -178,6 +180,7 @@ GLuint paint_tool_t::get_viewport_texture_height(app_t& app, u32 const layer) {
 		return brush_preview_pass.height;
 	} else {
 		assert_release(false);
+		return 0;
 	}
 }
 
@@ -191,6 +194,7 @@ ImVec4 paint_tool_t::get_viewport_tint(app_t& app, u32 const layer) {
 		return ImVec4(0.0f, 0.0f, 1.0f, 0.5f);
 	} else {
 		assert_release(false);
+		return ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 }
 

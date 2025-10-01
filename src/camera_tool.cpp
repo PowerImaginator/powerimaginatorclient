@@ -91,6 +91,7 @@ GLuint camera_tool_t::get_viewport_texture(app_t& app, u32 const layer) {
 		return points_renderer_get_final_fbo_texture(points_renderer);
 	} else {
 		assert_release(false);
+		return 0;
 	}
 }
 
@@ -101,9 +102,8 @@ GLuint camera_tool_t::get_viewport_texture_width(app_t& app, u32 const layer) {
 		return points_renderer_get_final_fbo_width(points_renderer);
 	} else {
 		assert_release(false);
+		return 0;
 	}
-
-	return 0;
 }
 
 GLuint camera_tool_t::get_viewport_texture_height(app_t& app, u32 const layer) {
@@ -113,9 +113,8 @@ GLuint camera_tool_t::get_viewport_texture_height(app_t& app, u32 const layer) {
 		return points_renderer_get_final_fbo_height(points_renderer);
 	} else {
 		assert_release(false);
+		return 0;
 	}
-
-	return 0;
 }
 
 std::string camera_tool_t::get_name() {
