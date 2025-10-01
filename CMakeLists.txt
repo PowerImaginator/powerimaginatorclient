@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.25)
 if(WIN32)
 	set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "")
 	set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows" ${CMAKE_PREFIX_PATH})
+	set(X_VCPKG_APPLOCAL_DEPS_INSTALL TRUE CACHE BOOL "")
 endif()
 
 project(PowerImaginator VERSION 0.1.0)
