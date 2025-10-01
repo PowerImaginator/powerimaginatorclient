@@ -156,7 +156,7 @@ void points_renderer_render(points_renderer_t& renderer, fly_camera_t& camera, g
 		gl_render_pass_end(renderer.push_color_passes[i]);
 	}
 
-	for (s32 si = renderer.pull_color_passes.size() - 1; si >= 0; --si) {
+	for (s32 si = static_cast<s32>(renderer.pull_color_passes.size()) - 1; si >= 0; --si) {
 		u32 i = si;
 
 		GLuint source_prev_tex = 0, source_cur_tex = 0;

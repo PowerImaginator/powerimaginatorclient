@@ -320,7 +320,7 @@ void alignment_tool_t::on_keypoints_changed(app_t& app) {
 	}
 
 	glBindTexture(GL_TEXTURE_2D, keypoints_tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32UI, keypoints_texture_data.size() / 2, 1, 0, GL_RG_INTEGER,
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32UI, static_cast<GLsizei>(keypoints_texture_data.size() / 2), 1, 0, GL_RG_INTEGER,
 		GL_UNSIGNED_INT, keypoints_texture_data.data());
 	glBindTexture(GL_TEXTURE_2D, 0);
 }

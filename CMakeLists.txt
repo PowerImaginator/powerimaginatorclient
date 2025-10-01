@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 3.25)
+
+if(WIN32)
+	set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "")
+	set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows" ${CMAKE_PREFIX_PATH})
+endif()
+
 project(PowerImaginator VERSION 0.1.0)
 
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
@@ -6,7 +12,7 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 3.4 REQUIRED)
 find_package(
-	VTK COMPONENTS
+	VTK REQUIRED COMPONENTS
 	CommonCore
 	CommonDataModel
 	CommonMath
@@ -86,7 +92,9 @@ file(
 file(GLOB PROJECT_CONFIGS CMakeLists.txt .gitattributes .gitignore .gitmodules)
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS} ${EXTERN_SOURCES} ${PROJECT_CONFIGS})
 target_precompile_headers(${PROJECT_NAME} PRIVATE "src/pch.h")
-set_source_files_properties(${EXTERN_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS false)
+set_source_files_properties(${EXTERN_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS true)
+target_compile_definitions(${PROJECT_NAME} PRIVATE IMGUI_DEFINE_MATH_OPERATORS IMGUI_IMPL_OPENGL_LOADER_GLAD)
+set_source_files_properties(${EXTERN_SOURCES} PROPERTIES COMPILE_WARNING_AS_ERROR OFF)
 set_target_properties(
 	${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 23
@@ -123,8 +131,8 @@ if(APPLE)
 
 	# Configure the bundle fixup script
 	configure_file(
-		${CMAKE_CURRENT_SOURCE_DIR}/cmake/FixBundle.cmake.in
-		${CMAKE_CURRENT_BINARY_DIR}/FixBundle.cmake
+		${CMAKE_CURRENT_SOURCE_DIR}/cmake/FixBundleMac.cmake.in
+		${CMAKE_CURRENT_BINARY_DIR}/FixBundleMac.cmake
 		@ONLY
 	)
 
@@ -161,7 +169,33 @@ if(APPLE)
 	set(CPACK_DMG_FORMAT "UDBZ")
 
 	# Run the bundle fixup script after installation
-	install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/FixBundle.cmake")
+	install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/FixBundleMac.cmake")
+
+	include(CPack)
+elseif(WIN32)
+	# Configure the bundle fixup script
+	configure_file(
+		${CMAKE_CURRENT_SOURCE_DIR}/cmake/FixBundleWindows.cmake.in
+		${CMAKE_CURRENT_BINARY_DIR}/FixBundleWindows.cmake
+		@ONLY
+	)
+
+	# Install executable
+	install(TARGETS ${PROJECT_NAME}
+		RUNTIME DESTINATION .
+	)
+
+	# Install shaders
+	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shaders
+		DESTINATION .
+	)
+
+	# Use ZIP generator for Windows
+	set(CPACK_GENERATOR "ZIP")
+	set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-windows-x64")
+
+	# Run the bundle fixup script after installation
+	install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/FixBundleWindows.cmake")
 
 	include(CPack)
 endif()

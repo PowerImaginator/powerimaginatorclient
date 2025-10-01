@@ -44,7 +44,7 @@ void gl_vertex_buffers_upload(gl_vertex_buffers_t& vertex_buffers, std::string c
 	buffer.size = size;
 	buffer.type = type;
 	buffer.normalized = normalized;
-	buffer.num_vertices = data.size() / size;
+	buffer.num_vertices = static_cast<GLuint>(data.size() / size);
 	if (!buffer.vbo) {
 		glGenBuffers(1, &buffer.vbo);
 		assert_release(buffer.vbo);

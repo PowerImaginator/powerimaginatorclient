@@ -54,7 +54,7 @@ void gl_render_pass_init(gl_render_pass_t& render_pass, std::string const& vert_
 		}
 	}
 	if (draw_buffers.size() > 0) {
-		glDrawBuffers(draw_buffers.size(), draw_buffers.data());
+		glDrawBuffers(static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data());
 	}
 	assert_release(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -32,7 +32,7 @@ void write_image_upload_item(
 }
 
 void split_rgba_to_rgb_mask(std::vector<u8>& rgb, std::vector<u8>& mask, std::vector<u8> const& rgba) {
-	u32 const numPixels = rgba.size() / 4;
+	u32 const numPixels = static_cast<u32>(rgba.size() / 4);
 	rgb.resize(numPixels * 3);
 	mask.resize(numPixels);
 	for (u32 i = 0; i < numPixels; ++i) {

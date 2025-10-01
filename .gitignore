@@ -5,6 +5,9 @@ imgui.ini
 !/.vscode/launch.json
 !/.vscode/tasks.json
 
+vcpkg_installed
+CMakeUserPresets.json
+
 # Node.js
 node_modules
 
