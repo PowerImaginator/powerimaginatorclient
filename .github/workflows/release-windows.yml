@@ -1,0 +1,57 @@
+name: Release Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v0.1.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as prerelease'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" ..
+
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+
+    - name: Package
+      run: |
+        cd build
+        cpack -G ZIP -C Release
+
+    - name: List build artifacts
+      run: |
+        cd build
+        dir *.zip
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        name: Release ${{ github.event.inputs.version }}
+        prerelease: ${{ github.event.inputs.prerelease }}
+        files: build/PowerImaginator-*-windows-x64.zip
