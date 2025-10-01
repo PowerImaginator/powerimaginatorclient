@@ -181,6 +181,12 @@ elseif(WIN32)
 		@ONLY
 	)
 
+	# Add Windows icon resource
+	if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/branding/icon.ico")
+		enable_language(RC)
+		target_sources(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/branding/app.rc")
+	endif()
+
 	# Install executable
 	install(TARGETS ${PROJECT_NAME}
 		RUNTIME DESTINATION .
