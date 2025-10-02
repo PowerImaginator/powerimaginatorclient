@@ -25,6 +25,10 @@ find_package(
 )
 
 add_subdirectory(extern/nativefiledialog-extended)
+
+# Disable httplib installation since we build it as a subdirectory and don't want its files in the final bundle
+# The linked dylibs will still be copied as part of FixBundleMac.cmake.in
+set(HTTPLIB_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(extern/cpp-httplib)
 
 set(
