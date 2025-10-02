@@ -96,6 +96,14 @@ file(
 
 file(GLOB PROJECT_CONFIGS CMakeLists.txt .gitattributes .gitignore .gitmodules)
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS} ${EXTERN_SOURCES} ${PROJECT_CONFIGS})
+
+# Hide console window on Windows while keeping console subsystem (allows main() function)
+if(WIN32)
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
+	)
+endif()
+
 target_precompile_headers(${PROJECT_NAME} PRIVATE "src/pch.h")
 set_source_files_properties(${EXTERN_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS true)
 target_compile_definitions(${PROJECT_NAME} PRIVATE IMGUI_DEFINE_MATH_OPERATORS IMGUI_IMPL_OPENGL_LOADER_GLAD)
