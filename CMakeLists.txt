@@ -25,6 +25,7 @@ find_package(
 )
 
 add_subdirectory(extern/nativefiledialog-extended)
+add_subdirectory(extern/cpp-httplib)
 
 set(
 	PROJECT_HEADERS
@@ -68,7 +69,6 @@ set(
 
 set(
   EXTERN_HEADERS
-  extern/cpp-httplib
   extern/glad/include
   extern/glm
   extern/imgui
@@ -115,7 +115,7 @@ target_include_directories(
 	src
 	${EXTERN_HEADERS}
 )
-target_link_libraries(${PROJECT_NAME} PRIVATE OpenGL::GL glfw ${VTK_LIBRARIES} nfd)
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenGL::GL glfw ${VTK_LIBRARIES} nfd httplib::httplib)
 
 vtk_module_autoinit(
 	TARGETS ${PROJECT_NAME}

@@ -1,6 +1,3 @@
 {
-  "dependencies": [
-    "glfw3",
-    "vtk"
-  ]
+  "dependencies": ["glfw3", "vtk", "openssl"]
 }
