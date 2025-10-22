@@ -34,7 +34,7 @@ void main(void) {
                 o_dest = vec4(0.0, 1.0, 1.0, hover_dist < 2.0 ? 1.0 : 0.5);
         } else if (has_keypoint) {
                 o_dest = vec4(0.0, 0.0, 1.0, 0.5);
-        } else if (world_pos_sample.w > 0.0 && mask_sample.x < 0.01) {
+        } else if (world_pos_sample.w > 0.0 && mask_sample.x < 100.0 /* 0.01 */) {
                 o_dest = vec4(1.0, 1.0, 1.0, 0.5);
         } else {
                 o_dest = vec4(0.0);

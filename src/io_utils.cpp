@@ -45,9 +45,9 @@ void split_rgba_to_rgb_mask(std::vector<u8>& rgb, std::vector<u8>& mask, std::ve
 
 void http_get(nlohmann::json& result, std::string const& host, std::string const& path, s32 const expect_status) {
 	httplib::Client cli(host);
-	cli.set_connection_timeout(120, 0);
-	cli.set_read_timeout(120, 0);
-	cli.set_write_timeout(120, 0);
+	cli.set_connection_timeout(1200, 0);
+	cli.set_read_timeout(1200, 0);
+	cli.set_write_timeout(1200, 0);
 	cli.set_follow_location(true);
 	httplib::Result res = cli.Get(path);
 	if (res) {
@@ -64,9 +64,9 @@ void http_get(nlohmann::json& result, std::string const& host, std::string const
 void http_post(nlohmann::json& result, std::string const& host, std::string const& path, nlohmann::json const& body,
 	s32 const expect_status) {
 	httplib::Client cli(host);
-	cli.set_connection_timeout(120, 0);
-	cli.set_read_timeout(120, 0);
-	cli.set_write_timeout(120, 0);
+	cli.set_connection_timeout(1200, 0);
+	cli.set_read_timeout(1200, 0);
+	cli.set_write_timeout(1200, 0);
 	cli.set_follow_location(true);
 	httplib::Result res = cli.Post(path, body.dump(), "application/json");
 	if (res) {
@@ -83,9 +83,9 @@ void http_post(nlohmann::json& result, std::string const& host, std::string cons
 void http_post(std::string& result, std::string const& host, std::string const& path,
 	httplib::UploadFormDataItems const& upload_items, s32 const expect_status) {
 	httplib::Client cli(host);
-	cli.set_connection_timeout(120, 0);
-	cli.set_read_timeout(120, 0);
-	cli.set_write_timeout(120, 0);
+	cli.set_connection_timeout(1200, 0);
+	cli.set_read_timeout(1200, 0);
+	cli.set_write_timeout(1200, 0);
 	cli.set_follow_location(true);
 	httplib::Result res = cli.Post(path, upload_items);
 	if (res) {

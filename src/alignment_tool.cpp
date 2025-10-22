@@ -254,7 +254,7 @@ void alignment_tool_t::update_hovered_keypoint(app_t& app) {
 			}
 
 			u64 const row_col_i = row * width + col;
-			if (world_pos[row_col_i * 4 + 3] < 0.001f || mask[row_col_i] > 0) {
+			if (world_pos[row_col_i * 4 + 3] < 0.001f /* || mask[row_col_i] > 0 */) {
 				continue;
 			}
 
@@ -320,7 +320,7 @@ void alignment_tool_t::on_keypoints_changed(app_t& app) {
 	}
 
 	glBindTexture(GL_TEXTURE_2D, keypoints_tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32UI, static_cast<GLsizei>(keypoints_texture_data.size() / 2), 1, 0, GL_RG_INTEGER,
-		GL_UNSIGNED_INT, keypoints_texture_data.data());
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32UI, static_cast<GLsizei>(keypoints_texture_data.size() / 2), 1, 0,
+		GL_RG_INTEGER, GL_UNSIGNED_INT, keypoints_texture_data.data());
 	glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -21,13 +21,13 @@ void main(void) {
 
         vec4 tint = vec4(0.0, 0.0, 0.0, 0.0);
 
-        if (mask < 0.01) {
-                tint = vec4(0.0, 1.0, 0.0, 0.5);
-        } else if (depth < u_min_depth || depth > u_max_depth) {
+        if (depth < u_min_depth || depth > u_max_depth) {
                 tint = vec4(1.0, 0.0, 0.0, 0.5);
         } else if (eraser > 0.0) {
                 tint = vec4(0.0, 0.0, 0.0, 0.5);
-        }
+        } /* else if (mask < 0.01) {
+                tint = vec4(0.0, 1.0, 0.0, 0.5);
+        } */
 
         o_dest = mix(vec4(color, 1.0), vec4(tint.xyz, 1.0), tint.w);
 }

@@ -1,3 +1,4 @@
+#include "imgui.h"
 #include "pch.h"
 
 #include "camera_tool.h"
@@ -79,16 +80,22 @@ void paint_tool_t::update_settings(app_t& app, f64 const dt) {
 
 	ImGui::TextWrapped("Please click and drag to paint over any empty or noticeably blurry areas in this image.");
 
-	ImGui::InputText("Prompt", &prompt);
-	ImGui::InputText("Negative Prompt", &negative_prompt);
-	ImGui::InputScalar("Seed", ImGuiDataType_U32, &seed);
+	ImGui::Text("Prompt");
+	ImGui::PushItemWidth(-1);
+	ImGui::InputTextMultiline("##Prompt", &prompt, ImVec2(0, 0), ImGuiInputTextFlags_WordWrap);
+	ImGui::PopItemWidth();
+	ImGui::Text("Negative Prompt");
+	ImGui::PushItemWidth(-1);
+	ImGui::InputTextMultiline("##NegativePrompt", &negative_prompt, ImVec2(0, 0), ImGuiInputTextFlags_WordWrap);
+	ImGui::PopItemWidth();
+	/*ImGui::InputScalar("Seed", ImGuiDataType_U32, &seed);
 	ImGui::SameLine();
 	if (ImGui::Button("Random")) {
 		seed = random_u32();
 	}
 	int steps_int = static_cast<int>(num_inference_steps);
 	ImGui::SliderInt("Steps", &steps_int, 1, 50);
-	num_inference_steps = static_cast<u32>(steps_int);
+	num_inference_steps = static_cast<u32>(steps_int);*/
 
 	ImGui::SliderFloat("Brush Radius", &brush_radius, 4.0f, 256.0f);
 
@@ -117,6 +124,7 @@ void paint_tool_t::update_settings(app_t& app, f64 const dt) {
 		app_navigate(app, "paint_result", false);
 	}
 
+	/*
 	if (ImGui::CollapsingHeader("Advanced")) {
 		ImGui::TextWrapped(
 			"Depending on the server, you may be able to achieve an effect similar to upscaling "
@@ -127,6 +135,7 @@ void paint_tool_t::update_settings(app_t& app, f64 const dt) {
 			strength = 1.0f;
 		}
 	}
+	*/
 }
 
 void paint_tool_t::destroy() {

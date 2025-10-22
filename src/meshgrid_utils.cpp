@@ -186,9 +186,9 @@ void remove_meshgrid_unwanted(vtkSmartPointer<vtkPoints> out_cur_chunk_points,
 
 	u64 num_inserted = 0;
 	for (u64 i = 0; i < in_mask.size(); ++i) {
-		if (in_mask[i] == 0) {
+		/* if (in_mask[i] == 0) {
 			continue;
-		}
+		} */
 		if (eraser_2d_mask[i] > 0) {
 			continue;
 		}
