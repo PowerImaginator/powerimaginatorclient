@@ -313,6 +313,100 @@ void app_inpaint_import_paint_result(app_t& app) {
 			colors_flipped, g_exchange.renderer_internal_width, g_exchange.renderer_internal_height, 3);
 }
 
+void app_vggt(app_t& app, u32 const chunk_id) {
+	app.combined_points->Reset();
+	app.combined_colors->Reset();
+	app.combined_colors->SetNumberOfComponents(3);
+	app.combined_points_backup->Reset();
+	app.combined_colors_backup->Reset();
+	app.combined_colors_backup->SetNumberOfComponents(3);
+	app.cur_chunk_points->Reset();
+	app.cur_chunk_colors->Reset();
+	app.cur_chunk_colors->SetNumberOfComponents(3);
+
+	// Collect all color images from chunks 0 through chunk_id
+	httplib::UploadFormDataItems items;
+	for (u32 i = 0; i <= chunk_id; ++i) {
+		auto it = g_exchange.chunks.find(i);
+		if (it != g_exchange.chunks.end()) {
+			exchange_chunk_t const& chunk = it->second;
+			if (!chunk.colors_out.empty()) {
+				std::string colors_png_str;
+				assert_release(chunk.colors_out.size() == chunk.width * chunk.height * 3);
+				write_image_upload_item(colors_png_str, chunk.width, chunk.height, 3,
+					chunk.colors_out.data(), chunk.width * 3);
+
+				std::string field_name = "files"; // "image_" + std::to_string(i);
+				items.push_back({field_name, colors_png_str, "image_" + std::to_string(i) + ".png",
+					"image/png"});
+			}
+		}
+	}
+
+	// Make HTTP POST request to VGGT server
+	std::string response_str;
+	http_post(response_str, g_exchange.vggt_server_url,
+		"/generate-point-cloud?api_token=" + httplib::encode_uri_component(g_exchange.api_token), items, 200);
+
+	// Parse the PLY response (handles both ASCII and binary PLY files)
+	// First validate that we have PLY data
+	if (response_str.size() < 4 || response_str.substr(0, 3) != "ply") {
+		std::cout << "Invalid PLY response - doesn't start with 'ply'" << std::endl;
+		return;
+	}
+
+	// Write to temporary file since SetInputString may have issues with binary data containing nulls
+	std::string temp_filename = "temp_vggt.ply";
+	{
+		std::ofstream temp_file(temp_filename, std::ios::binary);
+		if (!temp_file.is_open()) {
+			std::cout << "Failed to create temporary PLY file" << std::endl;
+			return;
+		}
+		temp_file.write(response_str.data(), response_str.size());
+		temp_file.close();
+	}
+
+	vtkSmartPointer<vtkPLYReader> ply_reader = vtkSmartPointer<vtkPLYReader>::New();
+	ply_reader->SetFileName(temp_filename.c_str());
+	ply_reader->Update();
+
+	vtkSmartPointer<vtkPolyData> poly_data = ply_reader->GetOutput();
+	if (poly_data) {
+		// Copy points
+		app.combined_points->DeepCopy(poly_data->GetPoints());
+
+		// Debug: check coordinate ranges
+		vtkPoints* points = app.combined_points;
+		if (points->GetNumberOfPoints() > 0) {
+			double bounds[6];
+			points->GetBounds(bounds);
+			std::cout << "VTK points bounds: min(" << bounds[0] << "," << bounds[1] << "," << bounds[2]
+				  << ") max(" << bounds[3] << "," << bounds[4] << "," << bounds[5] << ")" << std::endl;
+		}
+
+		// Copy colors if available
+		vtkSmartPointer<vtkUnsignedCharArray> colors =
+			vtkUnsignedCharArray::SafeDownCast(poly_data->GetPointData()->GetScalars());
+		if (colors) {
+			app.combined_colors->DeepCopy(colors);
+		}
+	}
+
+	app.combined_points->Squeeze();
+	app.combined_colors->Squeeze();
+	app.combined_points_backup->Squeeze();
+	app.combined_colors_backup->Squeeze();
+	app.cur_chunk_points->Squeeze();
+	app.cur_chunk_colors->Squeeze();
+
+	++app.cur_chunk_id;
+	exchange_allocate_chunk(
+		g_exchange, app.cur_chunk_id, g_exchange.renderer_internal_width, g_exchange.renderer_internal_height);
+
+	app_sync_points_with_vbo(app);
+}
+
 void app_inpaint_visualize(app_t& app) {
 	app_inpaint_discard_from_world(app);
 

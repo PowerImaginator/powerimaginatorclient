@@ -1,5 +1,6 @@
 exchange
 imgui.ini
+*.ply
 
 .vscode/**
 !/.vscode/launch.json

@@ -35,8 +35,10 @@ void convert_chans(std::vector<u8>& out, u32 const out_chans, std::vector<u8> co
 
 exchange_t g_exchange;
 
-void exchange_init(exchange_t& exchange, std::string const& server_url, std::string const& api_token) {
+void exchange_init(exchange_t& exchange, std::string const& server_url, std::string const& vggt_server_url,
+	std::string const& api_token) {
 	exchange.server_url = server_url;
+	exchange.vggt_server_url = vggt_server_url;
 	exchange.api_token = api_token;
 
 	nlohmann::json result;

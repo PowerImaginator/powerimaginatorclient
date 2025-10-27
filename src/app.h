@@ -71,6 +71,7 @@ void app_shutdown(app_t& app);
 
 void app_inpaint_export(app_t& app);
 void app_inpaint_import_paint_result(app_t& app);
+void app_vggt(app_t& app, u32 const chunk_id);
 void app_inpaint_visualize(app_t& app);
 void app_inpaint_add_to_world(app_t& app);
 void app_inpaint_discard_from_world(app_t& app);

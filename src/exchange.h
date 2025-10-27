@@ -18,6 +18,7 @@ struct exchange_t {
 	std::unordered_map<u32, exchange_chunk_t> chunks;
 
 	std::string server_url;
+	std::string vggt_server_url;
 	std::string api_token;
 	u32 renderer_internal_width;
 	u32 renderer_internal_height;
@@ -27,7 +28,8 @@ struct exchange_t {
 
 extern exchange_t g_exchange;
 
-void exchange_init(exchange_t& exchange, std::string const& server_url, std::string const& api_token);
+void exchange_init(exchange_t& exchange, std::string const& server_url, std::string const& vggt_server_url,
+	std::string const& api_token);
 void exchange_destroy(exchange_t& exchange);
 
 void exchange_allocate_chunk(exchange_t& exchange, u32 const chunk_id, u32 const width, u32 const height);

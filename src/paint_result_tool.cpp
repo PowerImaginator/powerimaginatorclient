@@ -31,9 +31,8 @@ void paint_result_tool_t::update_settings(app_t& app, f64 const dt) {
 			   "different mask or changing parameters.");
 
 	if (ImGui::Button("Next")) {
-		exchange_run_depth_estimation(g_exchange, app.cur_chunk_id);
-		static_cast<eraser_2d_tool_t*>(app.tools["eraser_2d"].get())->import_cur_chunk(app);
-		app_navigate(app, "eraser_2d", false);
+		app_vggt(app, app.cur_chunk_id);
+		app_navigate(app, "camera", false);
 	}
 }
 

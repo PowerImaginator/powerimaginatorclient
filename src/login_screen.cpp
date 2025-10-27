@@ -5,37 +5,8 @@
 
 bool login_screen_update(f64 const dt) {
 	UNUSED(dt);
-
-	static std::string server_url = "http://localhost:8000";
-	static std::string api_token = "";
-
-	f32 const margin = 16.0f;
-	ImGui::SetNextWindowPos(ImVec2(margin, margin), ImGuiCond_Always);
-	ImGui::SetNextWindowSize(
-		ImVec2(ImGui::GetIO().DisplaySize.x - margin * 2.0f, ImGui::GetIO().DisplaySize.y - margin * 2.0f),
-		ImGuiCond_Always);
-
-	ImGui::Begin("Login", nullptr,
-		ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoCollapse);
-
-	ImGui::InputText("Server URL", &server_url);
-	ImGui::InputText("API Token", &api_token, ImGuiInputTextFlags_Password);
-
-	bool connected = false;
-	if (ImGui::Button("Connect")) {
-		while (!server_url.empty() && server_url.back() == '/') {
-			server_url.pop_back();
-		}
-
-		exchange_init(g_exchange, server_url, api_token);
-
-		connected = true;
-	}
-
-	ImGui::End();
-
-	return connected;
+	exchange_init(g_exchange, "http://localhost:8000", "http://localhost:8001", "password1");
+	return true;
 }
 
 bool login_screen_main(GLFWwindow* window) {
