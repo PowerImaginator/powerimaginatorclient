@@ -53,11 +53,19 @@ void gl_render_pass_clear_with_override(gl_render_pass_t const& render_pass, std
 	glm::vec4 const& color, GLfloat const depth);
 
 void gl_render_pass_uniform_mat4(gl_render_pass_t const& render_pass, std::string const& name, glm::mat4 const& value);
+void gl_render_pass_uniform_mat4_array(
+	gl_render_pass_t const& render_pass, std::string const& name, std::vector<glm::mat4> const& values);
+void gl_render_pass_uniform_mat3_array(
+	gl_render_pass_t const& render_pass, std::string const& name, std::vector<glm::mat3> const& values);
 void gl_render_pass_uniform_texture(
+	gl_render_pass_t const& render_pass, std::string const& name, GLuint texture, GLenum texture_unit);
+void gl_render_pass_uniform_texture_array(
 	gl_render_pass_t const& render_pass, std::string const& name, GLuint texture, GLenum texture_unit);
 void gl_render_pass_uniform_int(gl_render_pass_t const& render_pass, std::string const& name, GLint value);
 void gl_render_pass_uniform_float(gl_render_pass_t const& render_pass, std::string const& name, GLfloat value);
 void gl_render_pass_uniform_vec2(gl_render_pass_t const& render_pass, std::string const& name, glm::vec2 const& value);
+void gl_render_pass_uniform_vec2_array(
+	gl_render_pass_t const& render_pass, std::string const& name, std::vector<glm::vec2> const& values);
 void gl_render_pass_uniform_ivec2(
 	gl_render_pass_t const& render_pass, std::string const& name, glm::ivec2 const& value);
 void gl_render_pass_uniform_bool(gl_render_pass_t const& render_pass, std::string const& name, bool value);

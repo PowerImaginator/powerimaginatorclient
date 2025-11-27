@@ -2,6 +2,8 @@
 
 #include "gl_render_pass.h"
 
+// #define ASSERT_ON_UNIFORMS
+
 void gl_render_pass_init(gl_render_pass_t& render_pass, std::string const& vert_filename,
 	std::string const& frag_filename, GLuint const width, GLuint const height,
 	std::unordered_map<std::string, gl_render_pass_output_descriptor_t> const& output_descriptors) {
@@ -143,46 +145,104 @@ void gl_render_pass_clear_with_override(gl_render_pass_t const& render_pass, std
 
 void gl_render_pass_uniform_mat4(gl_render_pass_t const& render_pass, std::string const& name, glm::mat4 const& value) {
 	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
 	assert_release(location >= 0);
+#endif
 	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void gl_render_pass_uniform_mat4_array(
+	gl_render_pass_t const& render_pass, std::string const& name, std::vector<glm::mat4> const& values) {
+	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
+	assert_release(location >= 0);
+#endif
+	if (!values.empty()) {
+		glUniformMatrix4fv(location, static_cast<GLsizei>(values.size()), GL_FALSE, glm::value_ptr(values[0]));
+	}
+}
+
+void gl_render_pass_uniform_mat3_array(
+	gl_render_pass_t const& render_pass, std::string const& name, std::vector<glm::mat3> const& values) {
+	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
+	assert_release(location >= 0);
+#endif
+	if (!values.empty()) {
+		glUniformMatrix3fv(location, static_cast<GLsizei>(values.size()), GL_FALSE, glm::value_ptr(values[0]));
+	}
 }
 
 void gl_render_pass_uniform_texture(
 	gl_render_pass_t const& render_pass, std::string const& name, GLuint texture, GLenum texture_unit) {
 	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
 	assert_release(location >= 0);
+#endif
 	glUniform1i(location, texture_unit - GL_TEXTURE0);
 	glActiveTexture(texture_unit);
 	glBindTexture(GL_TEXTURE_2D, texture);
 }
 
+void gl_render_pass_uniform_texture_array(
+	gl_render_pass_t const& render_pass, std::string const& name, GLuint texture, GLenum texture_unit) {
+	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
+	assert_release(location >= 0);
+#endif
+	glUniform1i(location, texture_unit - GL_TEXTURE0);
+	glActiveTexture(texture_unit);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
+}
+
 void gl_render_pass_uniform_int(gl_render_pass_t const& render_pass, std::string const& name, GLint value) {
 	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
 	assert_release(location >= 0);
+#endif
 	glUniform1i(location, value);
 }
 
 void gl_render_pass_uniform_float(gl_render_pass_t const& render_pass, std::string const& name, GLfloat value) {
 	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
 	assert_release(location >= 0);
+#endif
 	glUniform1f(location, value);
 }
 
 void gl_render_pass_uniform_vec2(gl_render_pass_t const& render_pass, std::string const& name, glm::vec2 const& value) {
 	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
 	assert_release(location >= 0);
+#endif
 	glUniform2fv(location, 1, glm::value_ptr(value));
+}
+
+void gl_render_pass_uniform_vec2_array(
+	gl_render_pass_t const& render_pass, std::string const& name, std::vector<glm::vec2> const& values) {
+	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
+	assert_release(location >= 0);
+#endif
+	if (!values.empty()) {
+		glUniform2fv(location, static_cast<GLsizei>(values.size()), glm::value_ptr(values[0]));
+	}
 }
 
 void gl_render_pass_uniform_ivec2(
 	gl_render_pass_t const& render_pass, std::string const& name, glm::ivec2 const& value) {
 	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
 	assert_release(location >= 0);
+#endif
 	glUniform2iv(location, 1, glm::value_ptr(value));
 }
 
 void gl_render_pass_uniform_bool(gl_render_pass_t const& render_pass, std::string const& name, bool value) {
 	GLint location = glGetUniformLocation(render_pass.shader.program, name.c_str());
+#ifdef ASSERT_ON_UNIFORMS
 	assert_release(location >= 0);
+#endif
 	glUniform1i(location, value);
 }

@@ -2,6 +2,8 @@
 
 #include "app.h"
 #include "camera_tool.h"
+#include "mesh_camera_tool.h"
+#include "mesh_renderer.h"
 
 void app_quad_vbo_init(gl_vertex_buffers_t& quad_vbo) {
 	quad_vbo.mode = GL_TRIANGLE_STRIP;
@@ -13,20 +15,23 @@ void app_quad_vbo_init(gl_vertex_buffers_t& quad_vbo) {
 
 void app_add_tools(app_t& app) {
 	app.tools.emplace("camera", std::make_unique<camera_tool_t>());
+	app.tools.emplace("mesh_camera", std::make_unique<mesh_camera_tool_t>());
 }
 
 void app_init(app_t& app) {
 	app_quad_vbo_init(app.quad_vbo);
 
 	app.points_vbo.mode = GL_POINTS;
+	app.mesh_vbo.mode = GL_TRIANGLES;
 
 	app_add_tools(app);
 	for (auto& [name, tool] : app.tools) {
 		tool->init(app);
 	}
-	app.tour_active_tool = "camera";
+	app.tour_active_tool = "mesh_camera";
 
-	app_load_vggt_output(app, ENV_VGGT_OUTPUT_SOURCE);
+	// app_load_vggt_output(app, ENV_VGGT_OUTPUT_SOURCE);
+	// Note: camera data will be loaded when mesh_camera_tool initializes
 }
 
 void app_update(app_t& app, f64 const dt) {
@@ -159,6 +164,7 @@ void app_shutdown(app_t& app) {
 	UNUSED(app);
 }
 
+/*
 void app_load_vggt_output(app_t& app, std::string const& filename) {
 	std::ifstream file(filename, std::ios::binary);
 	if (!file) {
@@ -277,7 +283,7 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 		opengl_conversion[1][1] = -1.0f;
 		opengl_conversion[2][2] = -1.0f;
 
-		glm::mat4 scene_transform = first_cam_to_world * opengl_conversion /* * align_rotation */;
+		glm::mat4 scene_transform = first_cam_to_world * opengl_conversion;
 
 		for (size_t i = 0; i < positions.size(); i += 3) {
 			glm::vec4 pos_homogeneous(positions[i], positions[i + 1], positions[i + 2], 1.0f);
@@ -297,3 +303,4 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 		std::cerr << "No valid points found in VGGT output" << std::endl;
 	}
 }
+*/

@@ -12,8 +12,11 @@ struct points_renderer_t {
 	gl_render_pass_t hpr_pass;
 	gl_render_pass_t multiply_color_pass;
 	gl_render_pass_t multiply_world_pos_pass;
+	gl_render_pass_t multiply_depth_pass;
 	std::vector<gl_render_pass_t> push_color_passes;
 	std::vector<gl_render_pass_t> pull_color_passes;
+	std::vector<gl_render_pass_t> push_depth_passes;
+	std::vector<gl_render_pass_t> pull_depth_passes;
 
 	static constexpr u32 MAX_LEVEL = 8; // MUST match length of u_tex_cam_pos_levels[...] array in hpr.frag
 

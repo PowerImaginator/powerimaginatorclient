@@ -53,11 +53,21 @@ void points_renderer_init(points_renderer_t& renderer) {
 		{{"o_dest", {.internal_format = GL_RGBA32F, .format = GL_RGBA, .type = GL_FLOAT}}});
 	renderer.multiply_world_pos_pass.depth_func = 0;
 
+	gl_render_pass_init(renderer.multiply_depth_pass, "shaders/quad.vert", "shaders/multiply_visibility_depth.frag",
+		renderer.points_pass.width, renderer.points_pass.height,
+		{{"o_dest", {.internal_format = GL_RGBA32F, .format = GL_RGBA, .type = GL_FLOAT}}});
+	renderer.multiply_depth_pass.depth_func = 0;
+
 	for (auto const& size : downsample_sizes) {
-		gl_render_pass_t cur_push_pass;
-		gl_render_pass_init(cur_push_pass, "shaders/quad.vert", "shaders/push_color.frag", size.x, size.y,
+		gl_render_pass_t cur_push_color_pass;
+		gl_render_pass_init(cur_push_color_pass, "shaders/quad.vert", "shaders/push_color.frag", size.x, size.y,
 			{{"o_dest", {.internal_format = GL_RGBA32F, .format = GL_RGBA, .type = GL_FLOAT}}});
-		renderer.push_color_passes.emplace_back(std::move(cur_push_pass));
+		renderer.push_color_passes.emplace_back(std::move(cur_push_color_pass));
+
+		gl_render_pass_t cur_push_depth_pass;
+		gl_render_pass_init(cur_push_depth_pass, "shaders/quad.vert", "shaders/push_color.frag", size.x, size.y,
+			{{"o_dest", {.internal_format = GL_RGBA32F, .format = GL_RGBA, .type = GL_FLOAT}}});
+		renderer.push_depth_passes.emplace_back(std::move(cur_push_depth_pass));
 	}
 
 	for (u32 i = 0; i < downsample_sizes.size(); ++i) {
@@ -70,10 +80,15 @@ void points_renderer_init(points_renderer_t& renderer) {
 			height = downsample_sizes[i - 1].y;
 		}
 
-		gl_render_pass_t cur_pull_pass;
-		gl_render_pass_init(cur_pull_pass, "shaders/quad.vert", "shaders/pull_color.frag", width, height,
+		gl_render_pass_t cur_pull_color_pass;
+		gl_render_pass_init(cur_pull_color_pass, "shaders/quad.vert", "shaders/pull_color.frag", width, height,
 			{{"o_dest", {.internal_format = GL_RGBA32F, .format = GL_RGBA, .type = GL_FLOAT}}});
-		renderer.pull_color_passes.emplace_back(std::move(cur_pull_pass));
+		renderer.pull_color_passes.emplace_back(std::move(cur_pull_color_pass));
+
+		gl_render_pass_t cur_pull_depth_pass;
+		gl_render_pass_init(cur_pull_depth_pass, "shaders/quad.vert", "shaders/pull_color.frag", width, height,
+			{{"o_dest", {.internal_format = GL_RGBA32F, .format = GL_RGBA, .type = GL_FLOAT}}});
+		renderer.pull_depth_passes.emplace_back(std::move(cur_pull_depth_pass));
 	}
 }
 
@@ -142,6 +157,14 @@ void points_renderer_render(points_renderer_t& renderer, fly_camera_t& camera, g
 	gl_render_pass_draw(renderer.multiply_world_pos_pass, quad_vbo);
 	gl_render_pass_end(renderer.multiply_world_pos_pass);
 
+	gl_render_pass_begin(renderer.multiply_depth_pass);
+	gl_render_pass_uniform_texture(renderer.multiply_depth_pass, "u_tex_source",
+		renderer.points_pass.internal_output_descriptors["##DEPTH"].texture, GL_TEXTURE0);
+	gl_render_pass_uniform_texture(renderer.multiply_depth_pass, "u_tex_factor",
+		renderer.hpr_pass.internal_output_descriptors["o_visibility"].texture, GL_TEXTURE1);
+	gl_render_pass_draw(renderer.multiply_depth_pass, quad_vbo);
+	gl_render_pass_end(renderer.multiply_depth_pass);
+
 	for (u32 i = 0; i < renderer.push_color_passes.size(); ++i) {
 		GLuint source_tex = 0;
 		if (i == 0) {
@@ -153,6 +176,19 @@ void points_renderer_render(points_renderer_t& renderer, fly_camera_t& camera, g
 		gl_render_pass_uniform_texture(renderer.push_color_passes[i], "u_tex_source", source_tex, GL_TEXTURE0);
 		gl_render_pass_draw(renderer.push_color_passes[i], quad_vbo);
 		gl_render_pass_end(renderer.push_color_passes[i]);
+	}
+
+	for (u32 i = 0; i < renderer.push_depth_passes.size(); ++i) {
+		GLuint source_tex = 0;
+		if (i == 0) {
+			source_tex = renderer.multiply_depth_pass.internal_output_descriptors["o_dest"].texture;
+		} else {
+			source_tex = renderer.push_depth_passes[i - 1].internal_output_descriptors["o_dest"].texture;
+		}
+		gl_render_pass_begin(renderer.push_depth_passes[i]);
+		gl_render_pass_uniform_texture(renderer.push_depth_passes[i], "u_tex_source", source_tex, GL_TEXTURE0);
+		gl_render_pass_draw(renderer.push_depth_passes[i], quad_vbo);
+		gl_render_pass_end(renderer.push_depth_passes[i]);
 	}
 
 	for (s32 si = static_cast<s32>(renderer.pull_color_passes.size()) - 1; si >= 0; --si) {
@@ -183,14 +219,47 @@ void points_renderer_render(points_renderer_t& renderer, fly_camera_t& camera, g
 		gl_render_pass_draw(renderer.pull_color_passes[i], quad_vbo);
 		gl_render_pass_end(renderer.pull_color_passes[i]);
 	}
+
+	for (s32 si = static_cast<s32>(renderer.pull_depth_passes.size()) - 1; si >= 0; --si) {
+		u32 i = si;
+
+		GLuint source_prev_tex = 0, source_cur_tex = 0;
+		if (i == renderer.pull_depth_passes.size() - 1) {
+			source_prev_tex = renderer.push_depth_passes[i].internal_output_descriptors["o_dest"].texture;
+			source_cur_tex =
+				renderer.push_depth_passes[i - 1].internal_output_descriptors["o_dest"].texture;
+		} else {
+			source_prev_tex =
+				renderer.pull_depth_passes[i + 1].internal_output_descriptors["o_dest"].texture;
+			if (i == 0) {
+				source_cur_tex =
+					renderer.multiply_depth_pass.internal_output_descriptors["o_dest"].texture;
+			} else {
+				source_cur_tex =
+					renderer.push_depth_passes[i - 1].internal_output_descriptors["o_dest"].texture;
+			}
+		}
+
+		gl_render_pass_begin(renderer.pull_depth_passes[i]);
+		gl_render_pass_uniform_texture(
+			renderer.pull_depth_passes[i], "u_tex_source_prev", source_prev_tex, GL_TEXTURE0);
+		gl_render_pass_uniform_texture(
+			renderer.pull_depth_passes[i], "u_tex_source_cur", source_cur_tex, GL_TEXTURE1);
+		gl_render_pass_draw(renderer.pull_depth_passes[i], quad_vbo);
+		gl_render_pass_end(renderer.pull_depth_passes[i]);
+	}
 }
 
 gl_render_pass_t* points_renderer_get_final_render_pass(points_renderer_t& renderer) {
 	return &renderer.pull_color_passes[0];
 }
 
+gl_render_pass_t* points_renderer_get_final_depth_pass(points_renderer_t& renderer) {
+	return &renderer.pull_depth_passes[0];
+}
+
 GLuint points_renderer_get_final_fbo_texture(points_renderer_t& renderer) {
-	return points_renderer_get_final_render_pass(renderer)->internal_output_descriptors["o_dest"].texture;
+	return points_renderer_get_final_depth_pass(renderer)->internal_output_descriptors["o_dest"].texture;
 }
 
 GLuint points_renderer_get_final_fbo_width(points_renderer_t& renderer) {
