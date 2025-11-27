@@ -1,6 +1,5 @@
 #include "pch.h"
 
-#include "exchange.h"
 #include "fly_camera.h"
 
 void fly_camera_mouse_update(fly_camera_t& camera, f32 const mouse_x, f32 const mouse_y) {
@@ -68,7 +67,7 @@ void fly_camera_update(fly_camera_t& camera, f32 const dt, f32 const aspect, f32
 	if (camera.key_d) {
 		dir.x += 1.0f;
 	}
-	dir *= dt * (camera.key_shift ? 10.0f : 5.0f);
+	dir *= dt * (camera.key_shift ? 3.0f : 1.0f);
 
 	camera.view_mat = glm::mat4(1.0f);
 	camera.view_mat = glm::rotate(camera.view_mat, camera.angle_x, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -80,5 +79,5 @@ void fly_camera_update(fly_camera_t& camera, f32 const dt, f32 const aspect, f32
 
 	camera.view_mat = glm::translate(camera.view_mat, -camera.pos);
 
-	camera.proj_mat = glm::perspective(g_exchange.renderer_internal_fov_y, aspect, z_near, z_far);
+	camera.proj_mat = glm::perspective(RENDERER_INTERNAL_FOV_Y, aspect, z_near, z_far);
 }

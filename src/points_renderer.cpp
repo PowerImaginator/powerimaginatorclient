@@ -1,11 +1,10 @@
 #include "pch.h"
 
-#include "exchange.h"
 #include "points_renderer.h"
 
 void points_renderer_init(points_renderer_t& renderer) {
-	gl_render_pass_init(renderer.points_pass, "shaders/points.vert", "shaders/points.frag",
-		g_exchange.renderer_internal_width, g_exchange.renderer_internal_height,
+	gl_render_pass_init(renderer.points_pass, "shaders/points.vert", "shaders/points.frag", RENDERER_INTERNAL_WIDTH,
+		RENDERER_INTERNAL_HEIGHT,
 		{{"o_color", {.internal_format = GL_RGB8, .format = GL_RGB, .type = GL_UNSIGNED_BYTE}},
 			{"o_cam_pos", {.internal_format = GL_RGBA32F, .format = GL_RGBA, .type = GL_FLOAT}},
 			{"o_world_pos", {.internal_format = GL_RGBA32F, .format = GL_RGBA, .type = GL_FLOAT}},
@@ -17,8 +16,8 @@ void points_renderer_init(points_renderer_t& renderer) {
 
 	std::vector<glm::ivec2> downsample_sizes;
 	{
-		u32 cur_downsample_width = g_exchange.renderer_internal_width / 2,
-		    cur_downsample_height = g_exchange.renderer_internal_height / 2;
+		u32 cur_downsample_width = RENDERER_INTERNAL_WIDTH / 2,
+		    cur_downsample_height = RENDERER_INTERNAL_HEIGHT / 2;
 		while (cur_downsample_width > 0 && cur_downsample_height > 0) {
 			downsample_sizes.push_back(glm::ivec2(cur_downsample_width, cur_downsample_height));
 			cur_downsample_width /= 2;
@@ -64,8 +63,8 @@ void points_renderer_init(points_renderer_t& renderer) {
 	for (u32 i = 0; i < downsample_sizes.size(); ++i) {
 		u32 width = 0, height = 0;
 		if (i == 0) {
-			width = g_exchange.renderer_internal_width;
-			height = g_exchange.renderer_internal_height;
+			width = RENDERER_INTERNAL_WIDTH;
+			height = RENDERER_INTERNAL_HEIGHT;
 		} else {
 			width = downsample_sizes[i - 1].x;
 			height = downsample_sizes[i - 1].y;
@@ -121,7 +120,7 @@ void points_renderer_render(points_renderer_t& renderer, fly_camera_t& camera, g
 	gl_render_pass_uniform_int(renderer.hpr_pass, "u_coarse_level", renderer.u_coarse_level);
 	gl_render_pass_uniform_vec2(renderer.hpr_pass, "u_viewport_size",
 		glm::vec2(renderer.points_pass.width, renderer.points_pass.height));
-	gl_render_pass_uniform_float(renderer.hpr_pass, "u_fov_y", g_exchange.renderer_internal_fov_y);
+	gl_render_pass_uniform_float(renderer.hpr_pass, "u_fov_y", RENDERER_INTERNAL_FOV_Y);
 	gl_render_pass_uniform_float(renderer.hpr_pass, "u_s_hpr", 10.0f * renderer.u_s0);
 	gl_render_pass_uniform_float(renderer.hpr_pass, "u_occlusion_threshold", renderer.u_occlusion_threshold);
 	gl_render_pass_draw(renderer.hpr_pass, quad_vbo);

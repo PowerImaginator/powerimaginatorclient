@@ -40,20 +40,11 @@ void camera_tool_t::update_settings(app_t& app, f64 const dt) {
 	UNUSED(app);
 	UNUSED(dt);
 
-	ImGui::BeginDisabled(true);
-	ImGui::Button("Back");
-	ImGui::EndDisabled();
-
-	ImGui::Separator();
-
 	ImGui::TextWrapped(
 		"Hold your left mouse button inside the viewport, then use WASD to move and drag your mouse to "
-		"look around. Once you've chosen the angle you want to inpaint, click Next.");
+		"look around.");
 
-	if (ImGui::Button("Next")) {
-		backup_camera(); // IMPORTANT: Needs to come before app_navigate which restores camera
-		app_navigate(app, "paint", false);
-	}
+	ImGui::Separator();
 
 	if (ImGui::CollapsingHeader("Advanced")) {
 		ImGui::TextWrapped("Adjusting these settings may help if you see holes in objects which should "
@@ -62,15 +53,6 @@ void camera_tool_t::update_settings(app_t& app, f64 const dt) {
 		ImGui::DragFloat("u_occlusion_threshold", &points_renderer.u_occlusion_threshold, 0.01f, 0.0f, 1.0f);
 		ImGui::SliderInt(
 			"u_coarse_level", &points_renderer.u_coarse_level, 0, points_renderer_t::MAX_LEVEL - 1);
-	}
-
-	ImGui::Separator();
-
-	ImGui::TextWrapped("Once you're finished creating the scene, export a PLY file for further editing in tools "
-			   "like MeshLab and Blender.");
-
-	if (ImGui::Button("Export PLY")) {
-		app_export_ply(app);
 	}
 }
 

@@ -51,17 +51,6 @@ struct app_t {
 	std::string tour_active_tool;
 
 	gl_vertex_buffers_t points_vbo;
-	vtkSmartPointer<vtkPoints> combined_points = nullptr;
-	vtkSmartPointer<vtkUnsignedCharArray> combined_colors = nullptr;
-	vtkSmartPointer<vtkPoints> combined_points_backup = nullptr;
-	vtkSmartPointer<vtkUnsignedCharArray> combined_colors_backup = nullptr;
-	vtkSmartPointer<vtkPoints> cur_chunk_points = nullptr;
-	vtkSmartPointer<vtkUnsignedCharArray> cur_chunk_colors = nullptr;
-	u32 cur_chunk_id = 0;
-	bool can_discard = false;
-
-	bool meshgrid_average_ref_and_cur_tps = false;
-	bool split_with_camera = false;
 };
 
 void app_init(app_t& app);
@@ -69,12 +58,4 @@ void app_update(app_t& app, f64 const dt);
 void app_imgui(app_t& app, f64 const dt);
 void app_shutdown(app_t& app);
 
-void app_inpaint_export(app_t& app);
-void app_inpaint_import_paint_result(app_t& app);
-void app_inpaint_visualize(app_t& app);
-void app_inpaint_add_to_world(app_t& app);
-void app_inpaint_discard_from_world(app_t& app);
-
-bool app_navigate(app_t& app, std::string const& next_tool, bool split_with_camera);
-
-void app_export_ply(app_t& app);
+void app_load_vggt_output(app_t& app, std::string const& filename);

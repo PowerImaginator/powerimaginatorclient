@@ -1,5 +1,6 @@
 exchange
 imgui.ini
+env.h
 
 .vscode/**
 !/.vscode/launch.json

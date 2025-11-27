@@ -40,24 +40,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include <vtkActor.h>
-#include <vtkAppendPolyData.h>
-#include <vtkCellData.h>
-#include <vtkLandmarkTransform.h>
-#include <vtkMatrix4x4.h>
-#include <vtkNew.h>
-#include <vtkPLYReader.h>
-#include <vtkPLYWriter.h>
-#include <vtkPointData.h>
-#include <vtkPoints.h>
-#include <vtkPolyData.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkProperty.h>
-#include <vtkSmartPointer.h>
-#include <vtkStatisticalOutlierRemoval.h>
-#include <vtkThinPlateSplineTransform.h>
-#include <vtkTransformInterpolator.h>
-#include <vtkTransformPolyDataFilter.h>
+#include "env.h"
 
 #ifndef NDEBUG
 #define DEBUG
@@ -97,3 +80,7 @@ typedef unsigned long long u64;
 typedef signed long long s64;
 typedef float f32;
 typedef double f64;
+
+#define RENDERER_INTERNAL_WIDTH 512
+#define RENDERER_INTERNAL_HEIGHT 512
+#define RENDERER_INTERNAL_FOV_Y (45.0f * 3.14159265358979323846f / 180.0f)
