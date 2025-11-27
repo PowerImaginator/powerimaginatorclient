@@ -54,9 +54,8 @@ void main(void) {
     vec4 existing_color = texelFetch(u_tex_viewport_color, ivec2(gl_FragCoord.xy), 0);
     vec4 existing_world_pos = texelFetch(u_tex_viewport_world_pos, ivec2(gl_FragCoord.xy), 0);
 
-    float vggt_depth = texelFetch(u_tex_camera_depth, ivec3(gl_FragCoord.x, gl_FragCoord.y, 0), 0).r;
-    vec3 world_from_vggt = project_vggt_to_world(gl_FragCoord.x, gl_FragCoord.y, 0);
-    vec3 vggt_from_world = project_world_to_vggt(world_from_vggt, 0);
-
-    o_color = vec4(abs(vggt_from_world - vec3(gl_FragCoord.x, gl_FragCoord.y, vggt_depth)), 1.0);
+    vec3 vggt_from_world = project_world_to_vggt(existing_world_pos.xyz, 0);
+    vec3 world_from_vggt = project_vggt_to_world(vggt_from_world.x, vggt_from_world.y, 0);
+    o_color.xyz = abs(existing_world_pos.xyz - world_from_vggt);
+    o_color.w = existing_world_pos.w;
 }

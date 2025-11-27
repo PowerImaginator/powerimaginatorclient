@@ -183,6 +183,13 @@ void load_vggt_mesh(std::string const& filename, gl_vertex_buffers_t& mesh_vbo, 
 	std::vector<f32> positions;
 	std::vector<u8> colors;
 
+	glm::mat4 first_cam_to_world(1.0f);
+	bool stored_first_camera = false;
+
+	glm::mat4 opengl_conversion(1.0f);
+	opengl_conversion[1][1] = -1.0f;
+	opengl_conversion[2][2] = -1.0f;
+
 	for (u32 img_idx = 0; img_idx < num_images; ++img_idx) {
 		// Read width and height
 		u32 width = 0, height = 0;
@@ -215,6 +222,11 @@ void load_vggt_mesh(std::string const& filename, gl_vertex_buffers_t& mesh_vbo, 
 			}
 		}
 
+		if (!stored_first_camera) {
+			first_cam_to_world = cam_to_world;
+			stored_first_camera = true;
+		}
+
 		// Read confidence buffer (H*W, f32)
 		std::vector<f32> confidence(width * height);
 		file.read(reinterpret_cast<char*>(confidence.data()), sizeof(f32) * width * height);
@@ -223,9 +235,9 @@ void load_vggt_mesh(std::string const& filename, gl_vertex_buffers_t& mesh_vbo, 
 		std::vector<f32> depth(width * height);
 		file.read(reinterpret_cast<char*>(depth.data()), sizeof(f32) * width * height);
 
-		// Store camera data for this image
+		// Store camera data for this image with transformed extrinsic
 		vggt_camera_data_t camera_data;
-		camera_data.extrinsic = cam_to_world;
+		camera_data.extrinsic = glm::inverse(first_cam_to_world) * opengl_conversion * cam_to_world;
 		camera_data.intrinsic = intrinsic;
 		camera_data.confidence = confidence;
 		camera_data.depth = depth;
@@ -241,10 +253,10 @@ void load_vggt_mesh(std::string const& filename, gl_vertex_buffers_t& mesh_vbo, 
 		std::vector<glm::vec3> world_positions(width * height);
 		std::vector<bool> valid_pixel(width * height, false);
 
-		f32 fx = intrinsic[0][0];
-		f32 fy = intrinsic[1][1];
-		f32 cx = intrinsic[2][0];
-		f32 cy = intrinsic[2][1];
+		f32 fx = camera_data.intrinsic[0][0];
+		f32 fy = camera_data.intrinsic[1][1];
+		f32 cx = camera_data.intrinsic[2][0];
+		f32 cy = camera_data.intrinsic[2][1];
 
 		for (u32 y = 0; y < height; ++y) {
 			for (u32 x = 0; x < width; ++x) {
@@ -269,8 +281,8 @@ void load_vggt_mesh(std::string const& filename, gl_vertex_buffers_t& mesh_vbo, 
 				cam_pos.y = (py - cy) * d / fy;
 				cam_pos.z = d;
 
-				// Transform to world space using camera-to-world matrix
-				glm::vec4 world_pos_homogeneous = cam_to_world * glm::vec4(cam_pos, 1.0f);
+				// Transform to world space using extrinsic matrix
+				glm::vec4 world_pos_homogeneous = camera_data.extrinsic * glm::vec4(cam_pos, 1.0f);
 				world_positions[idx] = glm::vec3(world_pos_homogeneous) / world_pos_homogeneous.w;
 			}
 		}
