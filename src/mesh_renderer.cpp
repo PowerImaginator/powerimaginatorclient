@@ -15,7 +15,7 @@ void mesh_renderer_init(mesh_renderer_t& renderer) {
 					.internal_format = GL_DEPTH_COMPONENT32F,
 					.format = GL_DEPTH_COMPONENT,
 					.type = GL_FLOAT}}});
-	renderer.mesh_pass.cull_face = GL_BACK;
+	// renderer.mesh_pass.cull_face = GL_BACK;
 
 	gl_render_pass_init(renderer.auto_mask_pass, "shaders/quad.vert", "shaders/auto_mask.frag",
 		RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT,

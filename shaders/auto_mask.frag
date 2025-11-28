@@ -108,7 +108,7 @@ void main(void) {
     vec4 existing_color = texelFetch(u_tex_viewport_color, ivec2(gl_FragCoord.xy), 0);
     vec4 existing_world_pos = texelFetch(u_tex_viewport_world_pos, ivec2(gl_FragCoord.xy), 0);
 
-    const int MAX_STEPS = 300;
+    const int MAX_STEPS = 1000;
     const float FAR_DISTANCE = 10.0;
     const float STEP_SIZE = FAR_DISTANCE / float(MAX_STEPS);
     const int CAMERA_INDEX = 0;
@@ -117,8 +117,8 @@ void main(void) {
     vec3 rd = get_rd();
 
     // BEGIN MASKING CODE
-    bool is_masked = false;
-    bool too_far = false;
+    bool ray_hit_mask = false;
+    bool ray_went_too_far = false;
     float total_dist = STEP_SIZE; // Start slightly away from camera to avoid self-intersection
     for (int i = 0; i < MAX_STEPS; ++i) {
         vec3 p = ro + total_dist * rd;
@@ -129,44 +129,67 @@ void main(void) {
         float viewport_stored_depth = texture(u_tex_viewport_depth, viewport_tex_coords).r;
         float viewport_p_depth = viewport_ndc_pos.z * 0.5 + 0.5;
         if (viewport_stored_depth < 0.999 && viewport_p_depth >= viewport_stored_depth - 0.0001) {
+            // Should be a no-op, something is maybe wrong with our math or the ray hasn't traveled far enough yet?
             break;
         }
 
-        int camera_index = 0;
-        vec4 vggt_from_world = project_world_to_vggt(p, camera_index);
+        bool is_invalid_in_all_cameras = true;
+        bool is_visible_from_any_camera = false;
 
-        bool invalid_projection = vggt_from_world.w < 0.001 ||
-                                  vggt_from_world.z < 0.001 ||
-                                  vggt_from_world.x != vggt_from_world.x || // NaN check
-                                  vggt_from_world.y != vggt_from_world.y || // NaN check
-                                  vggt_from_world.x < 0.0 ||
-                                  vggt_from_world.x >= u_camera_resolutions[camera_index].x ||
-                                  vggt_from_world.y < 0.0 ||
-                                  vggt_from_world.y >= u_camera_resolutions[camera_index].y;
-        if (invalid_projection) {
-            is_masked = true;
+        for (int camera_index = 0; camera_index < u_num_cameras; ++camera_index) {
+            vec4 vggt_from_world = project_world_to_vggt(p, camera_index);
+
+            bool invalid_projection = vggt_from_world.w < 0.001 ||
+                                    vggt_from_world.z < 0.001 ||
+                                    vggt_from_world.x != vggt_from_world.x || // NaN check
+                                    vggt_from_world.y != vggt_from_world.y || // NaN check
+                                    vggt_from_world.x < 0.0 ||
+                                    vggt_from_world.x >= u_camera_resolutions[camera_index].x ||
+                                    vggt_from_world.y < 0.0 ||
+                                    vggt_from_world.y >= u_camera_resolutions[camera_index].y;
+            if (invalid_projection) {
+                // it's outside the camera frustum
+                continue;
+            }
+
+            float compare_d = bilinear_sample(u_tex_camera_depth, vggt_from_world.xy, camera_index);
+            float compare_conf = bilinear_sample(u_tex_camera_confidence, vggt_from_world.xy, camera_index);
+
+            if (compare_d < 0.001 || compare_d > 999.0) {
+                // No data for that point exists (sky?)
+                continue;
+            }
+
+            is_invalid_in_all_cameras = false;
+
+            if (vggt_from_world.z > compare_d) {
+                // it's masked
+                continue;
+            }
+
+            is_visible_from_any_camera = true;
             break;
         }
 
-        float compare_d = bilinear_sample(u_tex_camera_depth, vggt_from_world.xy, 0);
-        float compare_conf = bilinear_sample(u_tex_camera_confidence, vggt_from_world.xy, 0);
-        if (compare_d < 0.001 || compare_d > 999.0 || vggt_from_world.z > compare_d) {
-            is_masked = true;
+        // the is_invalid_in_all_cameras thing seems to cause aliasing along the "invisible" camera frustums (i.e. where a camera frustum plane would be if we didn't have the !is_invalid_in_all_cameras condition), i don't know why or how to fix it yet
+        // but it's necessary to have that in order to see the whole scene - otherwise, the camera frustums act as infinite walls which occlude parts of the scene that are visible in other cameras
+        if (!is_visible_from_any_camera && !is_invalid_in_all_cameras) {
+            ray_hit_mask = true;
             break;
         }
 
         total_dist += STEP_SIZE;
 
         if (total_dist >= FAR_DISTANCE || i == MAX_STEPS - 1) {
-            too_far = true;
+            ray_went_too_far = true;
             break;
         }
     }
     // END MASKING CODE
     
-    if (is_masked) {
+    if (ray_hit_mask) {
         o_color = vec4(1.0, 0.0, 1.0, 1.0);
-    } else if (too_far) {
+    } else if (ray_went_too_far) {
         o_color = vec4(0.0, 0.0, 1.0, 1.0);
     } else {
         o_color = existing_color;
