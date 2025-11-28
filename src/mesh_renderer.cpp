@@ -262,10 +262,10 @@ void load_vggt_mesh(std::string const& filename, gl_vertex_buffers_t& mesh_vbo, 
 			for (u32 x = 0; x < width; ++x) {
 				u32 idx = y * width + x;
 				f32 d = depth[idx];
-				f32 conf = confidence[idx];
+				// f32 conf = confidence[idx];
 
 				// Skip points with low confidence or invalid depth
-				if (conf < 5.0f || d <= 0.001f || d >= 999.0f) {
+				if (/* conf < 5.0f || */ d <= 0.001f || d >= 999.0f) {
 					valid_pixel[idx] = false;
 					continue;
 				}
