@@ -156,7 +156,7 @@ void main(void) {
             float compare_d = bilinear_sample(u_tex_camera_depth, vggt_from_world.xy, camera_index);
             float compare_conf = bilinear_sample(u_tex_camera_confidence, vggt_from_world.xy, camera_index);
 
-            if (compare_d < 0.001 || compare_d > 999.0) {
+            if (compare_conf < 5.0 || compare_d < 0.001 || compare_d > 999.0) {
                 // No data for that point exists (sky?)
                 continue;
             }
