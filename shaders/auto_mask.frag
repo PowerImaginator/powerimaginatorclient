@@ -143,10 +143,11 @@ void main(void) {
                                     vggt_from_world.z < 0.001 ||
                                     vggt_from_world.x != vggt_from_world.x || // NaN check
                                     vggt_from_world.y != vggt_from_world.y || // NaN check
-                                    vggt_from_world.x < 0.0 ||
-                                    vggt_from_world.x >= u_camera_resolutions[camera_index].x ||
-                                    vggt_from_world.y < 0.0 ||
-                                    vggt_from_world.y >= u_camera_resolutions[camera_index].y;
+                                    // these 1/-1 prevent aliasing around the camera frustums, I wonder if different values will be needed here (and maybe changing 0.001 everywhere too) as scenes get bigger and the user gets farther from the camera origins?
+                                    vggt_from_world.x < 1.0 ||
+                                    vggt_from_world.x >= u_camera_resolutions[camera_index].x - 1 ||
+                                    vggt_from_world.y < 1.0 ||
+                                    vggt_from_world.y >= u_camera_resolutions[camera_index].y - 1;
             if (invalid_projection) {
                 // it's outside the camera frustum
                 continue;
@@ -162,17 +163,18 @@ void main(void) {
 
             is_invalid_in_all_cameras = false;
 
-            if (vggt_from_world.z > compare_d) {
+            if (vggt_from_world.z > compare_d + 0.001) {
                 // it's masked
                 continue;
             }
 
+            // the break statement here makes it so that looking at stuff visible to the first camera is much faster than looking at stuff in subsequent cameras
+            // if we could find a way to usually start from the camera looking within the same bounds and along the same direction as the viewport camera (instead of always from camera index 0),
+            // we can maybe speed this up to be comfortably realtime
             is_visible_from_any_camera = true;
             break;
         }
 
-        // the is_invalid_in_all_cameras thing seems to cause aliasing along the "invisible" camera frustums (i.e. where a camera frustum plane would be if we didn't have the !is_invalid_in_all_cameras condition), i don't know why or how to fix it yet
-        // but it's necessary to have that in order to see the whole scene - otherwise, the camera frustums act as infinite walls which occlude parts of the scene that are visible in other cameras
         if (!is_visible_from_any_camera && !is_invalid_in_all_cameras) {
             ray_hit_mask = true;
             break;
