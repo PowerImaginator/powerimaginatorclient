@@ -134,14 +134,14 @@ void mesh_renderer_render(
 		gl_render_pass_uniform_int(
 			renderer.auto_mask_pass, "u_num_cameras", static_cast<GLint>(renderer.camera_data.size()));
 
-		// Bind texture arrays
+		// Bind texture arrays - use GL_TEXTURE3 and GL_TEXTURE4 to avoid conflicts
 		if (renderer.depth_texture_array != 0) {
 			gl_render_pass_uniform_texture_array(renderer.auto_mask_pass, "u_tex_camera_depth",
-				renderer.depth_texture_array, GL_TEXTURE2);
+				renderer.depth_texture_array, GL_TEXTURE3);
 		}
 		if (renderer.confidence_texture_array != 0) {
 			gl_render_pass_uniform_texture_array(renderer.auto_mask_pass, "u_tex_camera_confidence",
-				renderer.confidence_texture_array, GL_TEXTURE3);
+				renderer.confidence_texture_array, GL_TEXTURE4);
 		}
 	}
 
@@ -265,7 +265,7 @@ void load_vggt_mesh(std::string const& filename, gl_vertex_buffers_t& mesh_vbo, 
 				f32 conf = confidence[idx];
 
 				// Skip points with low confidence or invalid depth
-				if (conf < 5.0f || d <= 0.0f || d >= 9999.0f) {
+				if (conf < 5.0f || d <= 0.001f || d >= 999.0f) {
 					valid_pixel[idx] = false;
 					continue;
 				}

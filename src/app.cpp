@@ -239,7 +239,7 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 				f32 conf = confidence[idx];
 
 				// Skip points with low confidence or invalid depth
-				if (conf < 5.0f || d <= 0.0f || d >= 9999.0f) {
+				if (conf < 5.0f || d <= 0.001f || d >= 999.0f) {
 					continue;
 				}
 
