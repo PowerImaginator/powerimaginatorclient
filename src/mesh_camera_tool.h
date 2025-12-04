@@ -29,6 +29,7 @@ public:
 
 	void backup_camera();
 	void restore_camera();
+	void take_screenshot(app_t& app);
 
 	mesh_renderer_t mesh_renderer;
 	fly_camera_t camera;

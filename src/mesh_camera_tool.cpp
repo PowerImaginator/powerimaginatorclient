@@ -2,6 +2,7 @@
 
 #include "app.h"
 #include "fly_camera.h"
+#include "io_utils.h"
 #include "mesh_camera_tool.h"
 #include "mesh_renderer.h"
 
@@ -36,12 +37,17 @@ void mesh_camera_tool_t::update(app_t& app, f64 const dt) {
 }
 
 void mesh_camera_tool_t::update_settings(app_t& app, f64 const dt) {
-	UNUSED(app);
 	UNUSED(dt);
 
 	ImGui::TextWrapped(
 		"Hold your left mouse button inside the viewport, then use WASD to move and drag your mouse to "
 		"look around.");
+
+	ImGui::Separator();
+
+	if (ImGui::Button("Take Screenshot")) {
+		take_screenshot(app);
+	}
 }
 
 void mesh_camera_tool_t::destroy() {
@@ -97,4 +103,39 @@ void mesh_camera_tool_t::backup_camera() {
 
 void mesh_camera_tool_t::restore_camera() {
 	camera = camera_backup;
+}
+
+void mesh_camera_tool_t::take_screenshot(app_t& app) {
+	UNUSED(app);
+
+	// Get the final render pass from the mesh renderer
+	gl_render_pass_t* final_pass = &mesh_renderer.auto_mask_pass;
+	if (!final_pass) {
+		std::cerr << "Failed to get final render pass" << std::endl;
+		return;
+	}
+
+	GLuint width = mesh_renderer_get_final_fbo_width(mesh_renderer);
+	GLuint height = mesh_renderer_get_final_fbo_height(mesh_renderer);
+
+	// Bind the framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, final_pass->fbo);
+	glViewport(0, 0, width, height);
+
+	// Read pixels from the framebuffer (RGBA format)
+	std::vector<u8> pixels(width * height * 4);
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+	// Unbind the framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// Flip the image vertically (OpenGL has origin at bottom-left, PNG expects top-left)
+	std::vector<u8> flipped_pixels;
+	flip_image_y(flipped_pixels, pixels, width, height, 4);
+
+	// Save as PNG
+	std::string output_path = "exchange/output.png";
+	write_image(output_path, width, height, 4, flipped_pixels.data());
+
+	std::cout << "Screenshot saved to: " << output_path << std::endl;
 }

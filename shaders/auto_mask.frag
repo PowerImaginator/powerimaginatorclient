@@ -190,9 +190,9 @@ void main(void) {
     // END MASKING CODE
     
     if (ray_hit_mask) {
-        o_color = vec4(1.0, 0.0, 1.0, 1.0);
+        o_color = vec4(0.0); // o_color = vec4(1.0, 0.0, 1.0, 1.0);
     } else if (ray_went_too_far) {
-        o_color = vec4(0.0, 0.0, 1.0, 1.0);
+        o_color = vec4(0.0); // o_color = vec4(0.0, 0.0, 1.0, 1.0);
     } else {
         o_color = existing_color;
     }
