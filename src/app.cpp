@@ -1,4 +1,5 @@
 #include "app.h"
+#include "auto_mask_renderer.h"
 #include "camera_tool.h"
 #include "mesh_renderer.h"
 #include "pch.h"
@@ -20,6 +21,7 @@ void app_init(app_t& app) {
 
 	app.points_vbo.mode = GL_POINTS;
 	app.mesh_vbo.mode = GL_TRIANGLES;
+	auto_mask_renderer_init(app.auto_mask_renderer, RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT);
 
 	app_add_tools(app);
 	for (auto& [name, tool] : app.tools) {

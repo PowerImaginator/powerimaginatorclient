@@ -110,8 +110,10 @@ void mesh_renderer_render(
 			static_cast<f32>(renderer.auto_mask_pass.height)));
 	gl_render_pass_uniform_texture(renderer.auto_mask_pass, "u_tex_viewport_color",
 		renderer.mesh_pass.internal_output_descriptors["o_color"].texture, GL_TEXTURE0);
+	/*
 	gl_render_pass_uniform_texture(renderer.auto_mask_pass, "u_tex_viewport_world_pos",
 		renderer.mesh_pass.internal_output_descriptors["o_world_pos"].texture, GL_TEXTURE1);
+	*/
 	gl_render_pass_uniform_texture(renderer.auto_mask_pass, "u_tex_viewport_depth",
 		renderer.mesh_pass.internal_output_descriptors["##DEPTH"].texture, GL_TEXTURE2);
 

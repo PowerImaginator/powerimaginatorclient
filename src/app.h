@@ -2,6 +2,7 @@
 
 #include "pch.h"
 
+#include "auto_mask_renderer.h"
 #include "gl_vertex_buffers.h"
 #include "mesh_renderer.h"
 
@@ -54,6 +55,7 @@ struct app_t {
 	gl_vertex_buffers_t points_vbo;
 	gl_vertex_buffers_t mesh_vbo;
 	std::vector<vggt_camera_data_t> camera_data;
+	auto_mask_renderer_t auto_mask_renderer;
 };
 
 void app_init(app_t& app);

@@ -93,8 +93,7 @@ void points_renderer_init(points_renderer_t& renderer) {
 }
 
 void points_renderer_render(points_renderer_t& renderer, fly_camera_t& camera, gl_vertex_buffers_t& points_vbo,
-	gl_vertex_buffers_t& quad_vbo, std::vector<vggt_camera_data_t> const& camera_data) {
-	UNUSED(camera_data);
+	gl_vertex_buffers_t& quad_vbo) {
 	gl_render_pass_begin(renderer.points_pass);
 	gl_render_pass_uniform_mat4(renderer.points_pass, "u_proj_mat", camera.proj_mat);
 	gl_render_pass_uniform_mat4(renderer.points_pass, "u_view_mat", camera.view_mat);
@@ -256,13 +255,17 @@ gl_render_pass_t* points_renderer_get_final_render_pass(points_renderer_t& rende
 }
 
 GLuint points_renderer_get_final_fbo_texture(points_renderer_t& renderer) {
-	return points_renderer_get_final_render_pass(renderer)->internal_output_descriptors["o_dest"].texture;
+	return renderer.pull_color_passes[0].internal_output_descriptors["o_dest"].texture;
 }
 
 GLuint points_renderer_get_final_fbo_width(points_renderer_t& renderer) {
-	return points_renderer_get_final_render_pass(renderer)->width;
+	return renderer.pull_color_passes[0].width;
 }
 
 GLuint points_renderer_get_final_fbo_height(points_renderer_t& renderer) {
-	return points_renderer_get_final_render_pass(renderer)->height;
+	return renderer.pull_color_passes[0].height;
+}
+
+GLuint points_renderer_get_final_depth_texture(points_renderer_t& renderer) {
+	return renderer.pull_depth_passes[0].internal_output_descriptors["o_dest"].texture;
 }

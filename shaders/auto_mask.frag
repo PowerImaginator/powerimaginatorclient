@@ -4,7 +4,6 @@ uniform mat4 u_viewport_proj_mat;
 uniform mat4 u_viewport_view_mat;
 uniform vec2 u_viewport_resolution;
 uniform sampler2D u_tex_viewport_color;
-uniform sampler2D u_tex_viewport_world_pos;
 uniform sampler2D u_tex_viewport_depth;
 
 uniform mat4 u_camera_extrinsics[16]; // Max 16 cameras (adjust if needed)
@@ -106,7 +105,6 @@ float bilinear_sample(sampler2DArray the_texture, vec2 pixel_coords, int camera_
 
 void main(void) {
     vec4 existing_color = texelFetch(u_tex_viewport_color, ivec2(gl_FragCoord.xy), 0);
-    vec4 existing_world_pos = texelFetch(u_tex_viewport_world_pos, ivec2(gl_FragCoord.xy), 0);
 
     const int MAX_STEPS = 1000;
     const float FAR_DISTANCE = 10.0;

@@ -5,7 +5,6 @@
 #include "fly_camera.h"
 #include "gl_render_pass.h"
 #include "gl_vertex_buffers.h"
-#include "mesh_renderer.h"
 
 struct points_renderer_t {
 	gl_render_pass_t points_pass;
@@ -28,8 +27,9 @@ struct points_renderer_t {
 
 void points_renderer_init(points_renderer_t& renderer);
 void points_renderer_render(points_renderer_t& renderer, fly_camera_t& camera, gl_vertex_buffers_t& points_vbo,
-	gl_vertex_buffers_t& quad_vbo, std::vector<vggt_camera_data_t> const& camera_data);
+	gl_vertex_buffers_t& quad_vbo);
 gl_render_pass_t* points_renderer_get_final_render_pass(points_renderer_t& renderer);
 GLuint points_renderer_get_final_fbo_texture(points_renderer_t& renderer);
 GLuint points_renderer_get_final_fbo_width(points_renderer_t& renderer);
 GLuint points_renderer_get_final_fbo_height(points_renderer_t& renderer);
+GLuint points_renderer_get_final_depth_texture(points_renderer_t& renderer);

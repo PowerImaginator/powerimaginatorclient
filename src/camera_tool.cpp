@@ -33,7 +33,11 @@ void camera_tool_t::update(app_t& app, f64 const dt) {
 			static_cast<f32>(points_renderer.points_pass.height),
 		0.1f, 100.0f);
 
-	points_renderer_render(points_renderer, camera, app.points_vbo, app.quad_vbo, app.camera_data);
+	auto_mask_renderer_load_camera_data(app.auto_mask_renderer, app.camera_data);
+	points_renderer_render(points_renderer, camera, app.points_vbo, app.quad_vbo);
+	auto_mask_renderer_render(app.auto_mask_renderer, camera, app.quad_vbo,
+		points_renderer_get_final_fbo_texture(points_renderer),
+		points_renderer_get_final_depth_texture(points_renderer));
 }
 
 void camera_tool_t::update_settings(app_t& app, f64 const dt) {
@@ -70,7 +74,7 @@ GLuint camera_tool_t::get_viewport_texture(app_t& app, u32 const layer) {
 	UNUSED(app);
 
 	if (layer == 0) {
-		return points_renderer_get_final_fbo_texture(points_renderer);
+		return auto_mask_renderer_get_final_fbo_texture(app.auto_mask_renderer);
 	} else {
 		assert_release(false);
 		return 0;
@@ -81,7 +85,7 @@ GLuint camera_tool_t::get_viewport_texture_width(app_t& app, u32 const layer) {
 	UNUSED(app);
 
 	if (layer == 0) {
-		return points_renderer_get_final_fbo_width(points_renderer);
+		return auto_mask_renderer_get_final_fbo_width(app.auto_mask_renderer);
 	} else {
 		assert_release(false);
 		return 0;
@@ -92,7 +96,7 @@ GLuint camera_tool_t::get_viewport_texture_height(app_t& app, u32 const layer) {
 	UNUSED(app);
 
 	if (layer == 0) {
-		return points_renderer_get_final_fbo_height(points_renderer);
+		return auto_mask_renderer_get_final_fbo_height(app.auto_mask_renderer);
 	} else {
 		assert_release(false);
 		return 0;
