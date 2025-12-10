@@ -1,9 +1,7 @@
-#include "pch.h"
-
 #include "app.h"
 #include "camera_tool.h"
-#include "mesh_camera_tool.h"
 #include "mesh_renderer.h"
+#include "pch.h"
 
 void app_quad_vbo_init(gl_vertex_buffers_t& quad_vbo) {
 	quad_vbo.mode = GL_TRIANGLE_STRIP;
@@ -15,7 +13,6 @@ void app_quad_vbo_init(gl_vertex_buffers_t& quad_vbo) {
 
 void app_add_tools(app_t& app) {
 	app.tools.emplace("camera", std::make_unique<camera_tool_t>());
-	app.tools.emplace("mesh_camera", std::make_unique<mesh_camera_tool_t>());
 }
 
 void app_init(app_t& app) {
@@ -28,10 +25,8 @@ void app_init(app_t& app) {
 	for (auto& [name, tool] : app.tools) {
 		tool->init(app);
 	}
-	app.tour_active_tool = "mesh_camera";
-
-	// app_load_vggt_output(app, ENV_VGGT_OUTPUT_SOURCE);
-	// Note: camera data will be loaded when mesh_camera_tool initializes
+	app_load_vggt_output(app, ENV_VGGT_OUTPUT_SOURCE);
+	app.tour_active_tool = "camera";
 }
 
 void app_update(app_t& app, f64 const dt) {
@@ -164,7 +159,6 @@ void app_shutdown(app_t& app) {
 	UNUSED(app);
 }
 
-/*
 void app_load_vggt_output(app_t& app, std::string const& filename) {
 	std::ifstream file(filename, std::ios::binary);
 	if (!file) {
@@ -176,10 +170,18 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 	u32 num_images = 0;
 	file.read(reinterpret_cast<char*>(&num_images), sizeof(u32));
 
+	app.camera_data.clear();
+	app.camera_data.reserve(num_images);
+
 	std::vector<f32> positions;
 	std::vector<u8> colors;
+
 	glm::mat4 first_cam_to_world(1.0f);
 	bool stored_first_camera = false;
+
+	glm::mat4 opengl_conversion(1.0f);
+	opengl_conversion[1][1] = -1.0f;
+	opengl_conversion[2][2] = -1.0f;
 
 	for (u32 img_idx = 0; img_idx < num_images; ++img_idx) {
 		// Read width and height
@@ -226,12 +228,26 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 		std::vector<f32> depth(width * height);
 		file.read(reinterpret_cast<char*>(depth.data()), sizeof(f32) * width * height);
 
+		// Store camera data with the same transform as mesh loading
+		vggt_camera_data_t camera_info;
+		camera_info.extrinsic = glm::inverse(first_cam_to_world) * opengl_conversion * cam_to_world;
+		camera_info.intrinsic = intrinsic;
+		camera_info.confidence = confidence;
+		camera_info.depth = depth;
+		camera_info.width = width;
+		camera_info.height = height;
+		app.camera_data.push_back(std::move(camera_info));
+
 		// Read color buffer (H*W*3, u8)
 		std::vector<u8> color(width * height * 3);
 		file.read(reinterpret_cast<char*>(color.data()), sizeof(u8) * width * height * 3);
 
-		// Convert depth map to 3D points
-		// For each pixel, compute 3D position using depth and camera intrinsics
+		// Convert depth map to 3D points (aligned with mesh loading)
+		f32 fx = intrinsic[0][0];
+		f32 fy = intrinsic[1][1];
+		f32 cx = intrinsic[2][0];
+		f32 cy = intrinsic[2][1];
+
 		for (u32 y = 0; y < height; ++y) {
 			for (u32 x = 0; x < width; ++x) {
 				u32 idx = y * width + x;
@@ -243,32 +259,24 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 					continue;
 				}
 
-				// Convert pixel coordinates to normalized device coordinates
 				f32 px = static_cast<f32>(x);
 				f32 py = static_cast<f32>(y);
-
-				// Convert to camera space using intrinsic matrix
-				// Camera space: x_cam = (px - cx) * depth / fx, y_cam = (py - cy) * depth / fy, z_cam = depth
-				f32 fx = intrinsic[0][0];
-				f32 fy = intrinsic[1][1];
-				f32 cx = intrinsic[2][0];
-				f32 cy = intrinsic[2][1];
 
 				glm::vec3 cam_pos;
 				cam_pos.x = (px - cx) * d / fx;
 				cam_pos.y = (py - cy) * d / fy;
-				cam_pos.z = d; // Camera space: positive Z is forward
+				cam_pos.z = d;
 
-				// Transform to world space using camera-to-world matrix
-				glm::vec4 world_pos_homogeneous = cam_to_world * glm::vec4(cam_pos, 1.0f);
+				// Transform to world space using aligned extrinsic
+				glm::vec4 world_pos_homogeneous =
+					app.camera_data.back().extrinsic * glm::vec4(cam_pos, 1.0f);
 				glm::vec3 world_pos = glm::vec3(world_pos_homogeneous) / world_pos_homogeneous.w;
 
-				// Add position
+				// Add position and color
 				positions.push_back(world_pos.x);
 				positions.push_back(world_pos.y);
 				positions.push_back(world_pos.z);
 
-				// Add color
 				u32 color_idx = idx * 3;
 				colors.push_back(color[color_idx]);
 				colors.push_back(color[color_idx + 1]);
@@ -277,30 +285,15 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 		}
 	}
 
-	// Apply scene alignment to match predictions_to_glb OpenGL coordinates
-	if (!positions.empty() && stored_first_camera) {
-		glm::mat4 opengl_conversion(1.0f);
-		opengl_conversion[1][1] = -1.0f;
-		opengl_conversion[2][2] = -1.0f;
-
-		glm::mat4 scene_transform = first_cam_to_world * opengl_conversion;
-
-		for (size_t i = 0; i < positions.size(); i += 3) {
-			glm::vec4 pos_homogeneous(positions[i], positions[i + 1], positions[i + 2], 1.0f);
-			glm::vec4 transformed = scene_transform * pos_homogeneous;
-			positions[i] = transformed.x / transformed.w;
-			positions[i + 1] = transformed.y / transformed.w;
-			positions[i + 2] = transformed.z / transformed.w;
-		}
-	}
-
 	// Upload to vertex buffers
 	if (!positions.empty()) {
+		app.points_vbo.mode = GL_POINTS;
 		gl_vertex_buffers_upload(app.points_vbo, "a_position", positions, 3, GL_FLOAT, GL_FALSE);
 		gl_vertex_buffers_upload(app.points_vbo, "a_color", colors, 3, GL_UNSIGNED_BYTE, GL_TRUE);
 		std::cout << "Loaded " << positions.size() / 3 << " points from VGGT output" << std::endl;
 	} else {
 		std::cerr << "No valid points found in VGGT output" << std::endl;
 	}
+
+	// Camera data stored on app_t for use by renderers/tools
 }
-*/

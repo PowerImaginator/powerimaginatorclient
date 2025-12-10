@@ -33,7 +33,7 @@ void camera_tool_t::update(app_t& app, f64 const dt) {
 			static_cast<f32>(points_renderer.points_pass.height),
 		0.1f, 100.0f);
 
-	points_renderer_render(points_renderer, camera, app.points_vbo, app.quad_vbo);
+	points_renderer_render(points_renderer, camera, app.points_vbo, app.quad_vbo, app.camera_data);
 }
 
 void camera_tool_t::update_settings(app_t& app, f64 const dt) {

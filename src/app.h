@@ -3,6 +3,7 @@
 #include "pch.h"
 
 #include "gl_vertex_buffers.h"
+#include "mesh_renderer.h"
 
 struct app_t;
 
@@ -52,6 +53,7 @@ struct app_t {
 
 	gl_vertex_buffers_t points_vbo;
 	gl_vertex_buffers_t mesh_vbo;
+	std::vector<vggt_camera_data_t> camera_data;
 };
 
 void app_init(app_t& app);
@@ -59,4 +61,4 @@ void app_update(app_t& app, f64 const dt);
 void app_imgui(app_t& app, f64 const dt);
 void app_shutdown(app_t& app);
 
-// void app_load_vggt_output(app_t& app, std::string const& filename);
+void app_load_vggt_output(app_t& app, std::string const& filename);
