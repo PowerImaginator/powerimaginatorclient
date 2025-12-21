@@ -40,9 +40,6 @@ set(
 	"src/gl_shader.h"
 	"src/gl_vertex_buffers.h"
 	"src/io_utils.h"
-	"src/auto_mask_renderer.h"
-	"src/mesh_camera_tool.h"
-	"src/mesh_renderer.h"
 	"src/points_renderer.h"
 )
 set(
@@ -55,9 +52,6 @@ set(
 	"src/gl_shader.cpp"
 	"src/gl_vertex_buffers.cpp"
 	"src/io_utils.cpp"
-	"src/auto_mask_renderer.cpp"
-	"src/mesh_camera_tool.cpp"
-	"src/mesh_renderer.cpp"
 	"src/points_renderer.cpp"
 )
 

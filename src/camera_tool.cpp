@@ -33,11 +33,7 @@ void camera_tool_t::update(app_t& app, f64 const dt) {
 			static_cast<f32>(points_renderer.points_pass.height),
 		0.1f, 100.0f);
 
-	auto_mask_renderer_load_camera_data(app.auto_mask_renderer, app.camera_data);
 	points_renderer_render(points_renderer, camera, app.points_vbo, app.quad_vbo);
-	auto_mask_renderer_render(app.auto_mask_renderer, camera, app.quad_vbo,
-		points_renderer_get_final_fbo_texture(points_renderer),
-		points_renderer_get_final_depth_texture(points_renderer));
 }
 
 void camera_tool_t::update_settings(app_t& app, f64 const dt) {
@@ -50,14 +46,7 @@ void camera_tool_t::update_settings(app_t& app, f64 const dt) {
 
 	ImGui::Separator();
 
-	if (ImGui::CollapsingHeader("Advanced")) {
-		ImGui::TextWrapped("Adjusting these settings may help if you see holes in objects which should "
-				   "be rendered solid.");
-		ImGui::DragFloat("u_s0", &points_renderer.u_s0, 0.0001f, 0.0f, 1.0f);
-		ImGui::DragFloat("u_occlusion_threshold", &points_renderer.u_occlusion_threshold, 0.01f, 0.0f, 1.0f);
-		ImGui::SliderInt(
-			"u_coarse_level", &points_renderer.u_coarse_level, 0, points_renderer_t::MAX_LEVEL - 1);
-	}
+	// TODO: Settings and GUI
 }
 
 void camera_tool_t::destroy() {
@@ -74,7 +63,7 @@ GLuint camera_tool_t::get_viewport_texture(app_t& app, u32 const layer) {
 	UNUSED(app);
 
 	if (layer == 0) {
-		return auto_mask_renderer_get_final_fbo_texture(app.auto_mask_renderer);
+		return points_renderer_get_final_fbo_texture(points_renderer);
 	} else {
 		assert_release(false);
 		return 0;
@@ -85,7 +74,7 @@ GLuint camera_tool_t::get_viewport_texture_width(app_t& app, u32 const layer) {
 	UNUSED(app);
 
 	if (layer == 0) {
-		return auto_mask_renderer_get_final_fbo_width(app.auto_mask_renderer);
+		return points_renderer_get_final_fbo_width(points_renderer);
 	} else {
 		assert_release(false);
 		return 0;
@@ -96,7 +85,7 @@ GLuint camera_tool_t::get_viewport_texture_height(app_t& app, u32 const layer) {
 	UNUSED(app);
 
 	if (layer == 0) {
-		return auto_mask_renderer_get_final_fbo_height(app.auto_mask_renderer);
+		return points_renderer_get_final_fbo_height(points_renderer);
 	} else {
 		assert_release(false);
 		return 0;

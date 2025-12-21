@@ -1,7 +1,5 @@
 #include "app.h"
-#include "auto_mask_renderer.h"
 #include "camera_tool.h"
-#include "mesh_renderer.h"
 #include "pch.h"
 
 void app_quad_vbo_init(gl_vertex_buffers_t& quad_vbo) {
@@ -20,8 +18,6 @@ void app_init(app_t& app) {
 	app_quad_vbo_init(app.quad_vbo);
 
 	app.points_vbo.mode = GL_POINTS;
-	app.mesh_vbo.mode = GL_TRIANGLES;
-	auto_mask_renderer_init(app.auto_mask_renderer, RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT);
 
 	app_add_tools(app);
 	for (auto& [name, tool] : app.tools) {
@@ -230,7 +226,6 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 		std::vector<f32> depth(width * height);
 		file.read(reinterpret_cast<char*>(depth.data()), sizeof(f32) * width * height);
 
-		// Store camera data with the same transform as mesh loading
 		vggt_camera_data_t camera_info;
 		camera_info.extrinsic = glm::inverse(first_cam_to_world) * opengl_conversion * cam_to_world;
 		camera_info.intrinsic = intrinsic;
@@ -244,7 +239,6 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 		std::vector<u8> color(width * height * 3);
 		file.read(reinterpret_cast<char*>(color.data()), sizeof(u8) * width * height * 3);
 
-		// Convert depth map to 3D points (aligned with mesh loading)
 		f32 fx = intrinsic[0][0];
 		f32 fy = intrinsic[1][1];
 		f32 cx = intrinsic[2][0];

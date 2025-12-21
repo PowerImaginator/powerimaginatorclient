@@ -6,23 +6,17 @@
 #include "gl_render_pass.h"
 #include "gl_vertex_buffers.h"
 
+struct vggt_camera_data_t {
+	glm::mat4 extrinsic; // camera-to-world matrix
+	glm::mat3 intrinsic; // intrinsic matrix
+	std::vector<f32> confidence; // confidence buffer (width * height)
+	std::vector<f32> depth; // depth buffer (width * height)
+	u32 width;
+	u32 height;
+};
+
 struct points_renderer_t {
 	gl_render_pass_t points_pass;
-	std::vector<gl_render_pass_t> downsample_passes;
-	gl_render_pass_t hpr_pass;
-	gl_render_pass_t multiply_color_pass;
-	gl_render_pass_t multiply_world_pos_pass;
-	gl_render_pass_t multiply_depth_pass;
-	std::vector<gl_render_pass_t> push_color_passes;
-	std::vector<gl_render_pass_t> pull_color_passes;
-	std::vector<gl_render_pass_t> push_depth_passes;
-	std::vector<gl_render_pass_t> pull_depth_passes;
-
-	static constexpr u32 MAX_LEVEL = 8; // MUST match length of u_tex_cam_pos_levels[...] array in hpr.frag
-
-	float u_s0 = 0.005f;
-	float u_occlusion_threshold = 0.1f;
-	int u_coarse_level = 4;
 };
 
 void points_renderer_init(points_renderer_t& renderer);
