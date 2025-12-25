@@ -26,6 +26,9 @@ find_package(
 
 add_subdirectory(extern/nativefiledialog-extended)
 
+set(GEOGRAM_LIB_ONLY ON)
+add_subdirectory(extern/geogram)
+
 # Disable httplib installation since we build it as a subdirectory and don't want its files in the final bundle
 # The linked dylibs will still be copied as part of FixBundleMac.cmake.in
 set(HTTPLIB_INSTALL OFF CACHE BOOL "" FORCE)
@@ -92,6 +95,7 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE "src/pch.h")
 set_source_files_properties(${EXTERN_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS true)
 target_compile_definitions(${PROJECT_NAME} PRIVATE IMGUI_DEFINE_MATH_OPERATORS IMGUI_IMPL_OPENGL_LOADER_GLAD)
 set_source_files_properties(${EXTERN_SOURCES} PROPERTIES COMPILE_WARNING_AS_ERROR OFF)
+set_target_properties(geogram PROPERTIES COMPILE_WARNING_AS_ERROR OFF)
 set_target_properties(
 	${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 23
@@ -111,7 +115,7 @@ target_include_directories(
 	src
 	${EXTERN_HEADERS}
 )
-target_link_libraries(${PROJECT_NAME} PRIVATE OpenGL::GL glfw ${VTK_LIBRARIES} nfd httplib::httplib)
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenGL::GL glfw ${VTK_LIBRARIES} nfd httplib::httplib geogram)
 
 vtk_module_autoinit(
 	TARGETS ${PROJECT_NAME}
@@ -157,7 +161,7 @@ if(APPLE)
 	# Set RPATH for bundle
 	set_target_properties(${PROJECT_NAME} PROPERTIES
 		INSTALL_RPATH "@executable_path/../Frameworks"
-		BUILD_WITH_INSTALL_RPATH TRUE
+		BUILD_WITH_INSTALL_RPATH FALSE
 	)
 
 	# Use DragNDrop generator to create DMG from the .app bundle

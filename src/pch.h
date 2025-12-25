@@ -26,6 +26,11 @@
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 
+#include <new> // Required before Geogram includes
+
+#include <geogram/basic/common.h>
+#include <geogram/delaunay/delaunay_3d.h>
+
 #include <algorithm>
 #include <cassert>
 #include <chrono>

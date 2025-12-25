@@ -3,6 +3,8 @@
 #include "app.h"
 
 int main() {
+	GEO::initialize(GEO::GEOGRAM_INSTALL_ALL);
+
 	NFD_Init();
 
 	glfwInit();

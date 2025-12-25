@@ -46,7 +46,21 @@ void camera_tool_t::update_settings(app_t& app, f64 const dt) {
 
 	ImGui::Separator();
 
-	// TODO: Settings and GUI
+	if (ImGui::Button("Bake!")) {
+		std::vector<f32> world_pos_buffer;
+		gl_render_pass_download(points_renderer.points_pass, "o_world_pos", world_pos_buffer);
+
+		std::vector<f32> valid_points_world_pos;
+		for (size_t i = 0; i < world_pos_buffer.size(); i += 4) {
+			if (world_pos_buffer[i + 3] > 0.0f) {
+				valid_points_world_pos.push_back(world_pos_buffer[i + 0]);
+				valid_points_world_pos.push_back(world_pos_buffer[i + 1]);
+				valid_points_world_pos.push_back(world_pos_buffer[i + 2]);
+			}
+		}
+
+		std::cout << "Valid points: " << valid_points_world_pos.size() / 3 << std::endl;
+	}
 }
 
 void camera_tool_t::destroy() {
