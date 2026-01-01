@@ -28,8 +28,14 @@
 
 #include <new> // Required before Geogram includes
 
+#include <geogram/basic/attributes.h>
+#include <geogram/basic/command_line.h>
+#include <geogram/basic/command_line_args.h>
 #include <geogram/basic/common.h>
+#include <geogram/basic/logger.h>
 #include <geogram/delaunay/delaunay_3d.h>
+#include <geogram/mesh/mesh.h>
+#include <geogram/points/co3ne.h>
 
 #include <algorithm>
 #include <cassert>

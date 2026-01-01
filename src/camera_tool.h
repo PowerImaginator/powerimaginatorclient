@@ -33,4 +33,7 @@ public:
 	points_renderer_t points_renderer;
 	fly_camera_t camera;
 	fly_camera_t camera_backup;
+
+private:
+	void bake_co3ne();
 };

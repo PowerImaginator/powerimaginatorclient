@@ -5,6 +5,10 @@
 int main() {
 	GEO::initialize(GEO::GEOGRAM_INSTALL_ALL);
 
+	GEO::CmdLine::import_arg_group("standard");
+	GEO::CmdLine::import_arg_group("algo");
+	GEO::CmdLine::import_arg_group("co3ne");
+
 	NFD_Init();
 
 	glfwInit();
