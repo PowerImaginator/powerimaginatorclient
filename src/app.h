@@ -52,6 +52,7 @@ struct app_t {
 	std::string tour_active_tool;
 
 	gl_vertex_buffers_t points_vbo;
+	gl_vertex_buffers_t mask_vbo;
 	std::vector<vggt_camera_data_t> camera_data;
 };
 

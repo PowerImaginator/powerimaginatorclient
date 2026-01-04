@@ -4,6 +4,7 @@
 
 #include "app.h"
 #include "fly_camera.h"
+#include "gl_render_pass.h"
 #include "points_renderer.h"
 
 class camera_tool_t : public app_tool_t {
@@ -34,6 +35,13 @@ public:
 	fly_camera_t camera;
 	fly_camera_t camera_backup;
 
+	gl_render_pass_t bake_co3ne_pass;
+	gl_render_pass_t bake_mask_pass;
+	gl_render_pass_t bake_combined_pass;
+
 private:
 	void bake_co3ne();
+	void bake_mask(app_t& app);
+	void bake_combined(app_t& app);
+	void bake(app_t& app);
 };

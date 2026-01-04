@@ -10,6 +10,40 @@ void camera_tool_t::init(app_t& app) {
 	UNUSED(app);
 
 	points_renderer_init(points_renderer);
+
+	gl_render_pass_init(bake_co3ne_pass, "shaders/mesh_3d.vert", "shaders/mesh_3d.frag", RENDERER_INTERNAL_WIDTH,
+		RENDERER_INTERNAL_HEIGHT,
+		{{"o_color",
+			 {.clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f),
+				 .internal_format = GL_RGBA8,
+				 .format = GL_RGBA,
+				 .type = GL_UNSIGNED_BYTE}},
+			{"##DEPTH",
+				{.clear_depth = 1.0f,
+					.internal_format = GL_DEPTH_COMPONENT32F,
+					.format = GL_DEPTH_COMPONENT,
+					.type = GL_FLOAT}}});
+
+	gl_render_pass_init(bake_mask_pass, "shaders/mask.vert", "shaders/mask.frag", RENDERER_INTERNAL_WIDTH,
+		RENDERER_INTERNAL_HEIGHT,
+		{{"o_color",
+			 {.clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f),
+				 .internal_format = GL_RGBA8,
+				 .format = GL_RGBA,
+				 .type = GL_UNSIGNED_BYTE}},
+			{"##DEPTH",
+				{.clear_depth = 1.0f,
+					.internal_format = GL_DEPTH_COMPONENT32F,
+					.format = GL_DEPTH_COMPONENT,
+					.type = GL_FLOAT}}});
+
+	gl_render_pass_init(bake_combined_pass, "shaders/quad.vert", "shaders/combine_mask_mesh.frag",
+		RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT,
+		{{"o_dest",
+			{.clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f),
+				.internal_format = GL_RGBA8,
+				.format = GL_RGBA,
+				.type = GL_UNSIGNED_BYTE}}});
 }
 
 void camera_tool_t::update(app_t& app, f64 const dt) {
@@ -48,7 +82,7 @@ void camera_tool_t::update_settings(app_t& app, f64 const dt) {
 	ImGui::Separator();
 
 	if (ImGui::Button("Bake!")) {
-		bake_co3ne();
+		bake(app);
 	}
 }
 
@@ -171,30 +205,46 @@ void camera_tool_t::bake_co3ne() {
 	gl_vertex_buffers_upload(vbo, "a_position", positions, 3, GL_FLOAT, GL_FALSE);
 	gl_vertex_buffers_upload(vbo, "a_color", vertex_colors, 3, GL_FLOAT, GL_FALSE);
 
-	gl_render_pass_t render_pass;
-	gl_render_pass_init(render_pass, "shaders/mesh_3d.vert", "shaders/mesh_3d.frag", RENDERER_INTERNAL_WIDTH,
-		RENDERER_INTERNAL_HEIGHT,
-		{{"o_color",
-			 {.clear_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f),
-				 .internal_format = GL_RGB8,
-				 .format = GL_RGB,
-				 .type = GL_UNSIGNED_BYTE}},
-			{"##DEPTH",
-				{.clear_depth = 1.0f,
-					.internal_format = GL_DEPTH_COMPONENT32F,
-					.format = GL_DEPTH_COMPONENT,
-					.type = GL_FLOAT}}});
-	gl_render_pass_begin(render_pass);
-	gl_render_pass_uniform_mat4(render_pass, "u_proj_mat", camera.proj_mat);
-	gl_render_pass_uniform_mat4(render_pass, "u_view_mat", camera.view_mat);
-	gl_render_pass_draw(render_pass, vbo);
-	gl_render_pass_end(render_pass);
+	gl_render_pass_begin(bake_co3ne_pass);
+	gl_render_pass_uniform_mat4(bake_co3ne_pass, "u_proj_mat", camera.proj_mat);
+	gl_render_pass_uniform_mat4(bake_co3ne_pass, "u_view_mat", camera.view_mat);
+	gl_render_pass_draw(bake_co3ne_pass, vbo);
+	gl_render_pass_end(bake_co3ne_pass);
+}
 
-	std::vector<u8> filled_color_buffer;
-	gl_render_pass_download(render_pass, "o_color", filled_color_buffer);
-	std::vector<u8> filled_color_buffer_flipped;
-	flip_image_y(
-		filled_color_buffer_flipped, filled_color_buffer, RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, 3);
-	stbi_write_png("exchange/output.png", RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, 3,
-		filled_color_buffer_flipped.data(), RENDERER_INTERNAL_WIDTH * 3);
+void camera_tool_t::bake_mask(app_t& app) {
+	gl_render_pass_begin(bake_mask_pass);
+	gl_render_pass_uniform_mat4(bake_mask_pass, "u_proj_mat", camera.proj_mat);
+	gl_render_pass_uniform_mat4(bake_mask_pass, "u_view_mat", camera.view_mat);
+	gl_render_pass_draw(bake_mask_pass, app.mask_vbo);
+	gl_render_pass_end(bake_mask_pass);
+}
+
+void camera_tool_t::bake_combined(app_t& app) {
+	GLuint mesh_color_texture = bake_co3ne_pass.internal_output_descriptors["o_color"].texture;
+	GLuint mesh_depth_texture = bake_co3ne_pass.internal_output_descriptors["##DEPTH"].texture;
+	GLuint mask_color_texture = bake_mask_pass.internal_output_descriptors["o_color"].texture;
+	GLuint mask_depth_texture = bake_mask_pass.internal_output_descriptors["##DEPTH"].texture;
+
+	gl_render_pass_begin(bake_combined_pass);
+	gl_render_pass_uniform_texture(bake_combined_pass, "u_tex_mesh_color", mesh_color_texture, GL_TEXTURE0);
+	gl_render_pass_uniform_texture(bake_combined_pass, "u_tex_mesh_depth", mesh_depth_texture, GL_TEXTURE1);
+	gl_render_pass_uniform_texture(bake_combined_pass, "u_tex_mask_color", mask_color_texture, GL_TEXTURE2);
+	gl_render_pass_uniform_texture(bake_combined_pass, "u_tex_mask_depth", mask_depth_texture, GL_TEXTURE3);
+	gl_render_pass_draw(bake_combined_pass, app.quad_vbo);
+	gl_render_pass_end(bake_combined_pass);
+}
+
+void camera_tool_t::bake(app_t& app) {
+	bake_co3ne();
+	bake_mask(app);
+	bake_combined(app);
+
+	std::vector<u8> combined_color_buffer;
+	gl_render_pass_download(bake_combined_pass, "o_dest", combined_color_buffer);
+	std::vector<u8> combined_color_buffer_flipped;
+	flip_image_y(combined_color_buffer_flipped, combined_color_buffer, RENDERER_INTERNAL_WIDTH,
+		RENDERER_INTERNAL_HEIGHT, 4);
+	stbi_write_png("exchange/output.png", RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, 4,
+		combined_color_buffer_flipped.data(), RENDERER_INTERNAL_WIDTH * 4);
 }

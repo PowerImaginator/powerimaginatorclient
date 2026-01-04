@@ -18,6 +18,7 @@ void app_init(app_t& app) {
 	app_quad_vbo_init(app.quad_vbo);
 
 	app.points_vbo.mode = GL_POINTS;
+	app.mask_vbo.mode = GL_TRIANGLES;
 
 	app_add_tools(app);
 	for (auto& [name, tool] : app.tools) {
@@ -173,6 +174,7 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 
 	std::vector<f32> positions;
 	std::vector<u8> colors;
+	std::vector<f32> mask_positions;
 
 	glm::mat4 first_cam_to_world(1.0f);
 	bool stored_first_camera = false;
@@ -244,15 +246,21 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 		f32 cx = intrinsic[2][0];
 		f32 cy = intrinsic[2][1];
 
+		std::vector<f32> tmp_all_positions;
 		for (u32 y = 0; y < height; ++y) {
 			for (u32 x = 0; x < width; ++x) {
 				u32 idx = y * width + x;
 				f32 d = depth[idx];
 				f32 conf = confidence[idx];
 
-				// Skip points with low confidence or invalid depth
-				if (conf < 5.0f || d <= 0.001f || d >= 999.0f) {
-					continue;
+				bool valid_point = conf > 5.0f && d > 0.001f && d < 999.0f;
+
+				// After checking for valid point, make sure we clamp any negative, zero, or infinite depths so we have valid points for tmp_all_positions which will be used to construct the mask
+				if (d < 0.001f) {
+					d = 0.001f;
+				}
+				if (d > 999.0f) {
+					d = 999.0f;
 				}
 
 				f32 px = static_cast<f32>(x);
@@ -268,15 +276,107 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 					app.camera_data.back().extrinsic * glm::vec4(cam_pos, 1.0f);
 				glm::vec3 world_pos = glm::vec3(world_pos_homogeneous) / world_pos_homogeneous.w;
 
-				// Add position and color
-				positions.push_back(world_pos.x);
-				positions.push_back(world_pos.y);
-				positions.push_back(world_pos.z);
+				tmp_all_positions.push_back(world_pos.x);
+				tmp_all_positions.push_back(world_pos.y);
+				tmp_all_positions.push_back(world_pos.z);
 
-				u32 color_idx = idx * 3;
-				colors.push_back(color[color_idx]);
-				colors.push_back(color[color_idx + 1]);
-				colors.push_back(color[color_idx + 2]);
+				if (valid_point) {
+					// Add position and color
+					positions.push_back(world_pos.x);
+					positions.push_back(world_pos.y);
+					positions.push_back(world_pos.z);
+
+					u32 color_idx = idx * 3;
+					colors.push_back(color[color_idx]);
+					colors.push_back(color[color_idx + 1]);
+					colors.push_back(color[color_idx + 2]);
+				}
+			}
+		}
+
+		for (u32 y = 0; y < height; ++y) {
+			for (u32 x = 0; x < width; ++x) {
+				u32 idx1 = y * width + x;
+				f32 d1 = depth[idx1];
+				f32 conf1 = confidence[idx1];
+				u32 idx2 = y * width + (x + 1);
+				f32 d2 = depth[idx2];
+				f32 conf2 = confidence[idx2];
+				u32 idx3 = (y + 1) * width + x;
+				f32 d3 = depth[idx3];
+				f32 conf3 = confidence[idx3];
+				u32 idx4 = (y + 1) * width + (x + 1);
+				f32 d4 = depth[idx4];
+				f32 conf4 = confidence[idx4];
+
+				bool valid_point1 = conf1 > 5.0f && d1 > 0.001f && d1 < 999.0f;
+				bool valid_point2 = conf2 > 5.0f && d2 > 0.001f && d2 < 999.0f;
+				bool valid_point3 = conf3 > 5.0f && d3 > 0.001f && d3 < 999.0f;
+				bool valid_point4 = conf4 > 5.0f && d4 > 0.001f && d4 < 999.0f;
+
+				if (!valid_point1 || !valid_point2 || !valid_point3 || !valid_point4) {
+					// INSERT_YOUR_CODE
+					// Collect the world positions for the four points of the quad
+					glm::vec3 p1(tmp_all_positions[idx1 * 3 + 0], tmp_all_positions[idx1 * 3 + 1],
+						tmp_all_positions[idx1 * 3 + 2]);
+					glm::vec3 p2(tmp_all_positions[idx2 * 3 + 0], tmp_all_positions[idx2 * 3 + 1],
+						tmp_all_positions[idx2 * 3 + 2]);
+					glm::vec3 p3(tmp_all_positions[idx3 * 3 + 0], tmp_all_positions[idx3 * 3 + 1],
+						tmp_all_positions[idx3 * 3 + 2]);
+					glm::vec3 p4(tmp_all_positions[idx4 * 3 + 0], tmp_all_positions[idx4 * 3 + 1],
+						tmp_all_positions[idx4 * 3 + 2]);
+
+					// Compute lengths of both diagonals
+					float diag1 = glm::length(p1 - p4); // diagonal p1 <-> p4
+					float diag2 = glm::length(p2 - p3); // diagonal p2 <-> p3
+
+					// Split along the shorter diagonal
+					if (diag1 <= diag2) {
+						// Split along p1-p4
+						// Triangle 1: p1, p2, p4
+						mask_positions.push_back(p1.x);
+						mask_positions.push_back(p1.y);
+						mask_positions.push_back(p1.z);
+						mask_positions.push_back(p2.x);
+						mask_positions.push_back(p2.y);
+						mask_positions.push_back(p2.z);
+						mask_positions.push_back(p4.x);
+						mask_positions.push_back(p4.y);
+						mask_positions.push_back(p4.z);
+						// Triangle 2: p1, p4, p3
+						mask_positions.push_back(p1.x);
+						mask_positions.push_back(p1.y);
+						mask_positions.push_back(p1.z);
+						mask_positions.push_back(p4.x);
+						mask_positions.push_back(p4.y);
+						mask_positions.push_back(p4.z);
+						mask_positions.push_back(p3.x);
+						mask_positions.push_back(p3.y);
+						mask_positions.push_back(p3.z);
+					} else {
+						// Split along p2-p3
+						// Triangle 1: p1, p2, p3
+						mask_positions.push_back(p1.x);
+						mask_positions.push_back(p1.y);
+						mask_positions.push_back(p1.z);
+						mask_positions.push_back(p2.x);
+						mask_positions.push_back(p2.y);
+						mask_positions.push_back(p2.z);
+						mask_positions.push_back(p3.x);
+						mask_positions.push_back(p3.y);
+						mask_positions.push_back(p3.z);
+						// Triangle 2: p2, p4, p3
+						mask_positions.push_back(p2.x);
+						mask_positions.push_back(p2.y);
+						mask_positions.push_back(p2.z);
+						mask_positions.push_back(p4.x);
+						mask_positions.push_back(p4.y);
+						mask_positions.push_back(p4.z);
+						mask_positions.push_back(p3.x);
+						mask_positions.push_back(p3.y);
+						mask_positions.push_back(p3.z);
+					}
+				}
 			}
 		}
 	}
@@ -289,6 +389,14 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 		std::cout << "Loaded " << positions.size() / 3 << " points from VGGT output" << std::endl;
 	} else {
 		std::cerr << "No valid points found in VGGT output" << std::endl;
+	}
+
+	if (!mask_positions.empty()) {
+		app.mask_vbo.mode = GL_TRIANGLES;
+		gl_vertex_buffers_upload(app.mask_vbo, "a_position", mask_positions, 3, GL_FLOAT, GL_FALSE);
+		std::cout << "Loaded " << mask_positions.size() / 3 << " triangles from VGGT output" << std::endl;
+	} else {
+		std::cerr << "No masked content found in VGGT output" << std::endl;
 	}
 
 	// Camera data stored on app_t for use by renderers/tools
