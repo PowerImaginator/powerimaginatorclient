@@ -13,7 +13,7 @@ void main(void) {
         vec4 mask_color = texelFetch(u_tex_mask_color, ivec2(gl_FragCoord.xy), 0);
         vec4 mask_depth = texelFetch(u_tex_mask_depth, ivec2(gl_FragCoord.xy), 0);
 
-        if (mask_depth.a > 0.0 && mask_depth.r < mesh_depth.r) {
+        if (mask_color.a > 0.0 && mask_depth.r < mesh_depth.r) {
                 o_dest = vec4(1.0, 0.0, 1.0, 1.0); // vec4(0.0);
         } else if (mesh_color.a > 0.0) {
                 o_dest = mesh_color;

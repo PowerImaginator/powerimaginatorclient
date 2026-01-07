@@ -155,7 +155,14 @@ void app_imgui(app_t& app, f64 const dt) {
 }
 
 void app_shutdown(app_t& app) {
-	UNUSED(app);
+	if (app.vggt_depth_tex_array) {
+		glDeleteTextures(1, &app.vggt_depth_tex_array);
+		app.vggt_depth_tex_array = 0;
+	}
+	if (app.vggt_conf_tex_array) {
+		glDeleteTextures(1, &app.vggt_conf_tex_array);
+		app.vggt_conf_tex_array = 0;
+	}
 }
 
 void app_load_vggt_output(app_t& app, std::string const& filename) {
@@ -294,8 +301,8 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 			}
 		}
 
-		for (u32 y = 0; y < height; ++y) {
-			for (u32 x = 0; x < width; ++x) {
+		for (u32 y = 0; y < height - 1; ++y) {
+			for (u32 x = 0; x < width - 1; ++x) {
 				u32 idx1 = y * width + x;
 				f32 d1 = depth[idx1];
 				f32 conf1 = confidence[idx1];
@@ -315,7 +322,6 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 				bool valid_point4 = conf4 > 5.0f && d4 > 0.001f && d4 < 999.0f;
 
 				if (!valid_point1 || !valid_point2 || !valid_point3 || !valid_point4) {
-					// INSERT_YOUR_CODE
 					// Collect the world positions for the four points of the quad
 					glm::vec3 p1(tmp_all_positions[idx1 * 3 + 0], tmp_all_positions[idx1 * 3 + 1],
 						tmp_all_positions[idx1 * 3 + 2]);
@@ -397,6 +403,63 @@ void app_load_vggt_output(app_t& app, std::string const& filename) {
 		std::cout << "Loaded " << mask_positions.size() / 3 << " triangles from VGGT output" << std::endl;
 	} else {
 		std::cerr << "No masked content found in VGGT output" << std::endl;
+	}
+
+	// Upload VGGT depth/confidence buffers to GPU as texture arrays for masking in shaders.
+	// Note: GL_TEXTURE_2D_ARRAY requires all layers to share the same width/height, so we allocate
+	// to the maximum dimensions and upload each camera into the lower-left region [0..w)x[0..h).
+	if (app.vggt_depth_tex_array) {
+		glDeleteTextures(1, &app.vggt_depth_tex_array);
+		app.vggt_depth_tex_array = 0;
+	}
+	if (app.vggt_conf_tex_array) {
+		glDeleteTextures(1, &app.vggt_conf_tex_array);
+		app.vggt_conf_tex_array = 0;
+	}
+
+	app.vggt_tex_width = 0;
+	app.vggt_tex_height = 0;
+	for (auto const& cam : app.camera_data) {
+		app.vggt_tex_width = std::max(app.vggt_tex_width, cam.width);
+		app.vggt_tex_height = std::max(app.vggt_tex_height, cam.height);
+	}
+
+	if (!app.camera_data.empty() && app.vggt_tex_width > 0 && app.vggt_tex_height > 0) {
+		GLsizei const layers = static_cast<GLsizei>(app.camera_data.size());
+
+		glGenTextures(1, &app.vggt_depth_tex_array);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, app.vggt_depth_tex_array);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, static_cast<GLsizei>(app.vggt_tex_width),
+			static_cast<GLsizei>(app.vggt_tex_height), layers, 0, GL_RED, GL_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glGenTextures(1, &app.vggt_conf_tex_array);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, app.vggt_conf_tex_array);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, static_cast<GLsizei>(app.vggt_tex_width),
+			static_cast<GLsizei>(app.vggt_tex_height), layers, 0, GL_RED, GL_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		for (GLsizei layer = 0; layer < layers; ++layer) {
+			auto const& cam = app.camera_data[static_cast<size_t>(layer)];
+			GLsizei const w = static_cast<GLsizei>(cam.width);
+			GLsizei const h = static_cast<GLsizei>(cam.height);
+
+			glBindTexture(GL_TEXTURE_2D_ARRAY, app.vggt_depth_tex_array);
+			glTexSubImage3D(
+				GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, w, h, 1, GL_RED, GL_FLOAT, cam.depth.data());
+
+			glBindTexture(GL_TEXTURE_2D_ARRAY, app.vggt_conf_tex_array);
+			glTexSubImage3D(
+				GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, w, h, 1, GL_RED, GL_FLOAT, cam.confidence.data());
+		}
+
+		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	}
 
 	// Camera data stored on app_t for use by renderers/tools

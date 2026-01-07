@@ -54,6 +54,13 @@ struct app_t {
 	gl_vertex_buffers_t points_vbo;
 	gl_vertex_buffers_t mask_vbo;
 	std::vector<vggt_camera_data_t> camera_data;
+
+	// GPU copies of the VGGT per-camera buffers (indexed by camera index).
+	// These are allocated as texture arrays to match the shader sampling logic.
+	GLuint vggt_depth_tex_array = 0; // GL_TEXTURE_2D_ARRAY, GL_R32F
+	GLuint vggt_conf_tex_array = 0; // GL_TEXTURE_2D_ARRAY, GL_R32F
+	u32 vggt_tex_width = 0;
+	u32 vggt_tex_height = 0;
 };
 
 void app_init(app_t& app);

@@ -216,6 +216,41 @@ void camera_tool_t::bake_mask(app_t& app) {
 	gl_render_pass_begin(bake_mask_pass);
 	gl_render_pass_uniform_mat4(bake_mask_pass, "u_proj_mat", camera.proj_mat);
 	gl_render_pass_uniform_mat4(bake_mask_pass, "u_view_mat", camera.view_mat);
+
+	// Bind VGGT camera data for auto-unmasking during baking.
+	// The shader caps at 16 cameras.
+	u32 const max_cameras = 16;
+	u32 const num_cameras = static_cast<u32>(std::min<size_t>(app.camera_data.size(), max_cameras));
+	gl_render_pass_uniform_int(bake_mask_pass, "u_num_cameras", static_cast<GLint>(num_cameras));
+
+	if (num_cameras > 0 && app.vggt_depth_tex_array && app.vggt_conf_tex_array) {
+		std::vector<glm::mat4> cam_to_world;
+		std::vector<glm::mat4> world_to_cam;
+		std::vector<glm::mat3> intrinsics;
+		std::vector<glm::vec2> resolutions;
+		cam_to_world.reserve(num_cameras);
+		world_to_cam.reserve(num_cameras);
+		intrinsics.reserve(num_cameras);
+		resolutions.reserve(num_cameras);
+
+		for (u32 i = 0; i < num_cameras; ++i) {
+			auto const& cam = app.camera_data[i];
+			cam_to_world.push_back(cam.extrinsic);
+			world_to_cam.push_back(glm::inverse(cam.extrinsic));
+			intrinsics.push_back(cam.intrinsic);
+			resolutions.push_back(glm::vec2(static_cast<f32>(cam.width), static_cast<f32>(cam.height)));
+		}
+
+		gl_render_pass_uniform_mat4_array(bake_mask_pass, "u_camera_extrinsics", cam_to_world);
+		gl_render_pass_uniform_mat4_array(bake_mask_pass, "u_camera_world_to_cam", world_to_cam);
+		gl_render_pass_uniform_mat3_array(bake_mask_pass, "u_camera_intrinsics", intrinsics);
+		gl_render_pass_uniform_vec2_array(bake_mask_pass, "u_camera_resolutions", resolutions);
+
+		gl_render_pass_uniform_texture_array(bake_mask_pass, "u_tex_camera_depth", app.vggt_depth_tex_array, GL_TEXTURE4);
+		gl_render_pass_uniform_texture_array(
+			bake_mask_pass, "u_tex_camera_confidence", app.vggt_conf_tex_array, GL_TEXTURE5);
+	}
+
 	gl_render_pass_draw(bake_mask_pass, app.mask_vbo);
 	gl_render_pass_end(bake_mask_pass);
 }
