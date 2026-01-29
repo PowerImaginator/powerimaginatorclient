@@ -246,7 +246,8 @@ void camera_tool_t::bake_mask(app_t& app) {
 		gl_render_pass_uniform_mat3_array(bake_mask_pass, "u_camera_intrinsics", intrinsics);
 		gl_render_pass_uniform_vec2_array(bake_mask_pass, "u_camera_resolutions", resolutions);
 
-		gl_render_pass_uniform_texture_array(bake_mask_pass, "u_tex_camera_depth", app.vggt_depth_tex_array, GL_TEXTURE4);
+		gl_render_pass_uniform_texture_array(
+			bake_mask_pass, "u_tex_camera_depth", app.vggt_depth_tex_array, GL_TEXTURE4);
 		gl_render_pass_uniform_texture_array(
 			bake_mask_pass, "u_tex_camera_confidence", app.vggt_conf_tex_array, GL_TEXTURE5);
 	}
