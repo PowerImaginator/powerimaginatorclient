@@ -1,0 +1,6 @@
+But it still has a problem if you generate an object that for example:
+- the front half is visible
+- there will be mask polygons generated on its sides connecting it to the background
+- you generate another angle of the side
+- you then rotate farther around, and can see a hole in the mask on the back of the object. because part of the mask on the side will get carved out by the camera angle from there, but when you go inside that, there aren't any mask faces to protect the back side of the object.
+I think this can be fixed by making mask polygons for the camera frustums also, but that didn't seem to work when I tried it. Also, maybe I am overestimating the issue and something about the way masks are generated would prevent this from happening anyways (because the next generated chunk will always have a mask polygon if there is a big dispartiy which would be necessary to have a hole big enough to get the camera inside?)
