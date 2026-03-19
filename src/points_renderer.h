@@ -21,7 +21,7 @@ struct points_renderer_t {
 
 void points_renderer_init(points_renderer_t& renderer);
 void points_renderer_render(points_renderer_t& renderer, fly_camera_t& camera, gl_vertex_buffers_t& points_vbo,
-	gl_vertex_buffers_t& quad_vbo);
+	gl_vertex_buffers_t& quad_vbo, f32 confidence_threshold);
 gl_render_pass_t* points_renderer_get_final_render_pass(points_renderer_t& renderer);
 GLuint points_renderer_get_final_fbo_texture(points_renderer_t& renderer);
 GLuint points_renderer_get_final_fbo_width(points_renderer_t& renderer);

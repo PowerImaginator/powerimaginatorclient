@@ -30,6 +30,15 @@ public:
 
 	void backup_camera();
 	void restore_camera();
+	void run_generation(app_t& app);
+
+	std::string prompt = "A comfortable living room, elegant interior design";
+	std::string negative_prompt = "BadDream, (UnrealisticDream:1.2)";
+	u32 seed = 3;
+	u32 num_inference_steps = 30;
+	f32 strength = 1.0f;
+	f32 confidence_threshold = 5.0f;
+	bool debug_save_bake_inputs = false;
 
 	points_renderer_t points_renderer;
 	fly_camera_t camera;
@@ -40,6 +49,7 @@ public:
 	gl_render_pass_t bake_combined_pass;
 
 private:
+	bool has_visible_scene_content();
 	void bake_co3ne();
 	void bake_mask(app_t& app);
 	void bake_combined(app_t& app);

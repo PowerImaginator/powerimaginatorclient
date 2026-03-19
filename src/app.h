@@ -68,4 +68,7 @@ void app_update(app_t& app, f64 const dt);
 void app_imgui(app_t& app, f64 const dt);
 void app_shutdown(app_t& app);
 
+bool app_navigate(app_t& app, std::string const& next_tool);
+
 void app_load_vggt_output(app_t& app, std::string const& filename);
+void app_load_vggt_output(app_t& app, std::vector<u8> const& output_bin);

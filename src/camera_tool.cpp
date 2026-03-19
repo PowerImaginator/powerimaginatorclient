@@ -3,8 +3,10 @@
 
 #include "app.h"
 #include "camera_tool.h"
+#include "exchange.h"
 #include "fly_camera.h"
 #include "points_renderer.h"
+#include "paint_result_tool.h"
 
 void camera_tool_t::init(app_t& app) {
 	UNUSED(app);
@@ -68,21 +70,47 @@ void camera_tool_t::update(app_t& app, f64 const dt) {
 			static_cast<f32>(points_renderer.points_pass.height),
 		0.1f, 100.0f);
 
-	points_renderer_render(points_renderer, camera, app.points_vbo, app.quad_vbo);
+	points_renderer_render(points_renderer, camera, app.points_vbo, app.quad_vbo, confidence_threshold);
 }
 
 void camera_tool_t::update_settings(app_t& app, f64 const dt) {
-	UNUSED(app);
 	UNUSED(dt);
 
-	ImGui::TextWrapped(
-		"Hold your left mouse button inside the viewport, then use WASD to move and drag your mouse to "
-		"look around.");
+	ImGui::BeginDisabled(true);
+	ImGui::Button("Back");
+	ImGui::EndDisabled();
 
 	ImGui::Separator();
 
-	if (ImGui::Button("Bake!")) {
-		bake(app);
+	ImGui::TextWrapped(
+		"Hold your left mouse button inside the viewport, then use WASD to move and drag your mouse to "
+		"look around. Once you've chosen the angle you want to inpaint, click Next.");
+
+	ImGui::InputText("Prompt", &prompt);
+	ImGui::InputText("Negative Prompt", &negative_prompt);
+	ImGui::InputScalar("Seed", ImGuiDataType_U32, &seed);
+	ImGui::SameLine();
+	if (ImGui::Button("Random")) {
+		seed = random_u32();
+	}
+	int steps_int = static_cast<int>(num_inference_steps);
+	ImGui::SliderInt("Steps", &steps_int, 1, 50);
+	num_inference_steps = static_cast<u32>(steps_int);
+
+	ImGui::Separator();
+
+	if (ImGui::Button("Next")) {
+		run_generation(app);
+	}
+
+	if (ImGui::CollapsingHeader("Advanced")) {
+		ImGui::SeparatorText("Generation");
+		ImGui::SliderFloat("Confidence Threshold", &confidence_threshold, 0.0f, 20.0f);
+		ImGui::SliderFloat("Global Strength", &strength, 0.0f, 1.0f);
+		if (strength > 0.99f) {
+			strength = 1.0f;
+		}
+		ImGui::Checkbox("Debug Save Bake Inputs", &debug_save_bake_inputs);
 	}
 }
 
@@ -139,6 +167,101 @@ void camera_tool_t::backup_camera() {
 
 void camera_tool_t::restore_camera() {
 	camera = camera_backup;
+}
+
+void camera_tool_t::run_generation(app_t& app) {
+	backup_camera();
+
+	if (!has_visible_scene_content()) {
+		std::vector<u8> color_rgb;
+		std::vector<u8> mask;
+		color_rgb.assign(static_cast<size_t>(RENDERER_INTERNAL_WIDTH) * static_cast<size_t>(RENDERER_INTERNAL_HEIGHT) * 3,
+			0);
+		mask.assign(static_cast<size_t>(RENDERER_INTERNAL_WIDTH) * static_cast<size_t>(RENDERER_INTERNAL_HEIGHT), 255);
+
+		if (ENV_DEBUG_SAVE_EXCHANGE_IMAGES != 0 || debug_save_bake_inputs) {
+			write_image("exchange/color.png", RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, 3,
+				color_rgb.data(), RENDERER_INTERNAL_WIDTH * 3);
+			write_image("exchange/mask.png", RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, 1, mask.data(),
+				RENDERER_INTERNAL_WIDTH);
+		}
+
+		exchange_set_bake_inputs(g_exchange, RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, color_rgb, mask);
+		exchange_run_inpainting(g_exchange, prompt, negative_prompt, seed, num_inference_steps, strength);
+
+		static_cast<paint_result_tool_t*>(app.tools["paint_result"].get())
+			->import_image(g_exchange.paint_result.colors, g_exchange.paint_result.width,
+				g_exchange.paint_result.height);
+		app_navigate(app, "paint_result");
+		return;
+	}
+
+	bake(app);
+
+	std::vector<u8> combined_rgba;
+	gl_render_pass_download(bake_combined_pass, "o_dest", combined_rgba);
+	std::vector<u8> combined_rgba_flipped;
+	flip_image_y(combined_rgba_flipped, combined_rgba, RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, 4);
+
+	std::vector<u8> color_rgb;
+	std::vector<u8> mask;
+	color_rgb.resize(static_cast<size_t>(RENDERER_INTERNAL_WIDTH) * static_cast<size_t>(RENDERER_INTERNAL_HEIGHT) * 3);
+	mask.resize(static_cast<size_t>(RENDERER_INTERNAL_WIDTH) * static_cast<size_t>(RENDERER_INTERNAL_HEIGHT));
+
+	for (size_t i = 0; i < mask.size(); ++i) {
+		u8 r = combined_rgba_flipped[i * 4 + 0];
+		u8 g = combined_rgba_flipped[i * 4 + 1];
+		u8 b = combined_rgba_flipped[i * 4 + 2];
+		u8 a = combined_rgba_flipped[i * 4 + 3];
+
+		color_rgb[i * 3 + 0] = r;
+		color_rgb[i * 3 + 1] = g;
+		color_rgb[i * 3 + 2] = b;
+
+		bool is_mask_pixel = a < 255;
+		mask[i] = is_mask_pixel ? 255 : 0;
+	}
+
+	bool all_pixels_masked = true;
+	for (u8 const value : mask) {
+		if (value == 0) {
+			all_pixels_masked = false;
+			break;
+		}
+	}
+
+	if (all_pixels_masked) {
+		for (u8& value : color_rgb) {
+			value = 0;
+		}
+	}
+
+	if (ENV_DEBUG_SAVE_EXCHANGE_IMAGES != 0 || debug_save_bake_inputs) {
+		write_image("exchange/color.png", RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, 3, color_rgb.data(),
+			RENDERER_INTERNAL_WIDTH * 3);
+		write_image("exchange/mask.png", RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, 1, mask.data(),
+			RENDERER_INTERNAL_WIDTH);
+	}
+
+	exchange_set_bake_inputs(g_exchange, RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, color_rgb, mask);
+	exchange_run_inpainting(g_exchange, prompt, negative_prompt, seed, num_inference_steps, strength);
+
+	static_cast<paint_result_tool_t*>(app.tools["paint_result"].get())
+		->import_image(g_exchange.paint_result.colors, g_exchange.paint_result.width, g_exchange.paint_result.height);
+	app_navigate(app, "paint_result");
+}
+
+bool camera_tool_t::has_visible_scene_content() {
+	std::vector<f32> world_pos_buffer;
+	gl_render_pass_download(points_renderer.points_pass, "o_world_pos", world_pos_buffer);
+
+	for (size_t i = 0; i + 3 < world_pos_buffer.size(); i += 4) {
+		if (world_pos_buffer[i + 3] > 0.0f) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void camera_tool_t::bake_co3ne() {
@@ -216,6 +339,7 @@ void camera_tool_t::bake_mask(app_t& app) {
 	gl_render_pass_begin(bake_mask_pass);
 	gl_render_pass_uniform_mat4(bake_mask_pass, "u_proj_mat", camera.proj_mat);
 	gl_render_pass_uniform_mat4(bake_mask_pass, "u_view_mat", camera.view_mat);
+	gl_render_pass_uniform_float(bake_mask_pass, "u_confidence_threshold", confidence_threshold);
 
 	// Bind VGGT camera data for auto-unmasking during baking.
 	// The shader caps at 16 cameras.
@@ -275,12 +399,4 @@ void camera_tool_t::bake(app_t& app) {
 	bake_co3ne();
 	bake_mask(app);
 	bake_combined(app);
-
-	std::vector<u8> combined_color_buffer;
-	gl_render_pass_download(bake_combined_pass, "o_dest", combined_color_buffer);
-	std::vector<u8> combined_color_buffer_flipped;
-	flip_image_y(combined_color_buffer_flipped, combined_color_buffer, RENDERER_INTERNAL_WIDTH,
-		RENDERER_INTERNAL_HEIGHT, 4);
-	stbi_write_png("exchange/output.png", RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, 4,
-		combined_color_buffer_flipped.data(), RENDERER_INTERNAL_WIDTH * 4);
 }

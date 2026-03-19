@@ -38,11 +38,13 @@ set(
 	PROJECT_HEADERS
 	"src/app.h"
 	"src/camera_tool.h"
+	"src/exchange.h"
 	"src/fly_camera.h"
 	"src/gl_render_pass.h"
 	"src/gl_shader.h"
 	"src/gl_vertex_buffers.h"
 	"src/io_utils.h"
+	"src/paint_result_tool.h"
 	"src/points_renderer.h"
 )
 set(
@@ -50,11 +52,13 @@ set(
 	"src/main.cpp"
 	"src/app.cpp"
 	"src/camera_tool.cpp"
+	"src/exchange.cpp"
 	"src/fly_camera.cpp"
 	"src/gl_render_pass.cpp"
 	"src/gl_shader.cpp"
 	"src/gl_vertex_buffers.cpp"
 	"src/io_utils.cpp"
+	"src/paint_result_tool.cpp"
 	"src/points_renderer.cpp"
 )
 
