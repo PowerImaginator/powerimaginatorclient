@@ -39,9 +39,12 @@ void write_image(
 void write_image_upload_item(
 	std::string& output, s32 const w, s32 const h, s32 const chans, u8 const* data, s32 const stride = 0);
 void split_rgba_to_rgb_mask(std::vector<u8>& rgb, std::vector<u8>& mask, std::vector<u8> const& rgba);
-void http_get(nlohmann::json& result, std::string const& host, std::string const& path, s32 const expect_status = 200);
+void http_get(nlohmann::json& result, std::string const& host, std::string const& path, s32 const expect_status = 200,
+	httplib::Headers const& headers = {}, bool allow_status_202 = false);
+void http_get(std::string& result, std::string const& host, std::string const& path, s32 const expect_status = 200,
+	httplib::Headers const& headers = {});
 void http_post(nlohmann::json& result, std::string const& host, std::string const& path, nlohmann::json const& body,
-	s32 const expect_status = 200);
+	s32 const expect_status = 200, httplib::Headers const& headers = {});
 void http_post(std::string& result, std::string const& host, std::string const& path,
 	httplib::UploadFormDataItems const& upload_items, s32 const expect_status = 200);
 u32 random_u32();

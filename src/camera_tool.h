@@ -3,6 +3,7 @@
 #include "pch.h"
 
 #include "app.h"
+#include "exchange.h"
 #include "fly_camera.h"
 #include "gl_render_pass.h"
 #include "points_renderer.h"
@@ -32,11 +33,15 @@ public:
 	void restore_camera();
 	void run_generation(app_t& app);
 
-	std::string prompt = "A comfortable living room, elegant interior design";
-	std::string negative_prompt = "BadDream, (UnrealisticDream:1.2)";
+	std::string prompt = "Repair this image of a comfortable living room, elegant interior design. Fill green "
+			     "masked regions with new content.";
+	std::string negative_prompt = "";
+	exchange_edit_model_t model = exchange_edit_model_t::FluxKlein9B;
+	exchange_qwen_acceleration_t qwen_acceleration = exchange_qwen_acceleration_t::Regular;
 	u32 seed = 3;
-	u32 num_inference_steps = 30;
-	f32 strength = 1.0f;
+	u32 num_inference_steps = 8;
+	f32 guidance_scale = 4.5f;
+	bool enable_safety_checker = true;
 	f32 confidence_threshold = 5.0f;
 	bool debug_save_bake_inputs = false;
 

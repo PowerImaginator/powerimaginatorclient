@@ -84,10 +84,26 @@ void camera_tool_t::update_settings(app_t& app, f64 const dt) {
 
 	ImGui::TextWrapped(
 		"Hold your left mouse button inside the viewport, then use WASD to move and drag your mouse to "
-		"look around. Once you've chosen the angle you want to inpaint, click Next.");
+		"look around. Once you've chosen the angle you want to edit, click Next.");
+
+	char const* model_labels[] = {"Qwen Image Edit 2511", "Flux Klein 4B", "Flux Klein 9B"};
+	int selected_model = static_cast<int>(model);
+	if (ImGui::Combo("Model", &selected_model, model_labels, IM_ARRAYSIZE(model_labels))) {
+		model = static_cast<exchange_edit_model_t>(selected_model);
+	}
 
 	ImGui::InputText("Prompt", &prompt);
-	ImGui::InputText("Negative Prompt", &negative_prompt);
+	if (model == exchange_edit_model_t::QwenImageEdit2511) {
+		char const* acceleration_labels[] = {"none", "regular", "high"};
+		int selected_acceleration = static_cast<int>(qwen_acceleration);
+		if (ImGui::Combo("Qwen Acceleration", &selected_acceleration, acceleration_labels,
+				IM_ARRAYSIZE(acceleration_labels))) {
+			qwen_acceleration = static_cast<exchange_qwen_acceleration_t>(selected_acceleration);
+		}
+
+		ImGui::InputText("Negative Prompt", &negative_prompt);
+	}
+
 	ImGui::InputScalar("Seed", ImGuiDataType_U32, &seed);
 	ImGui::SameLine();
 	if (ImGui::Button("Random")) {
@@ -106,10 +122,10 @@ void camera_tool_t::update_settings(app_t& app, f64 const dt) {
 	if (ImGui::CollapsingHeader("Advanced")) {
 		ImGui::SeparatorText("Generation");
 		ImGui::SliderFloat("Confidence Threshold", &confidence_threshold, 0.0f, 20.0f);
-		ImGui::SliderFloat("Global Strength", &strength, 0.0f, 1.0f);
-		if (strength > 0.99f) {
-			strength = 1.0f;
+		if (model == exchange_edit_model_t::QwenImageEdit2511) {
+			ImGui::SliderFloat("Guidance Scale", &guidance_scale, 1.0f, 20.0f);
 		}
+		ImGui::Checkbox("Enable Safety Checker", &enable_safety_checker);
 		ImGui::Checkbox("Debug Save Bake Inputs", &debug_save_bake_inputs);
 	}
 }
@@ -187,7 +203,8 @@ void camera_tool_t::run_generation(app_t& app) {
 		}
 
 		exchange_set_bake_inputs(g_exchange, RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, color_rgb, mask);
-		exchange_run_inpainting(g_exchange, prompt, negative_prompt, seed, num_inference_steps, strength);
+		exchange_run_image_edit(g_exchange, model, prompt, negative_prompt, seed, num_inference_steps,
+			guidance_scale, qwen_acceleration, enable_safety_checker);
 
 		static_cast<paint_result_tool_t*>(app.tools["paint_result"].get())
 			->import_image(g_exchange.paint_result.colors, g_exchange.paint_result.width,
@@ -244,7 +261,8 @@ void camera_tool_t::run_generation(app_t& app) {
 	}
 
 	exchange_set_bake_inputs(g_exchange, RENDERER_INTERNAL_WIDTH, RENDERER_INTERNAL_HEIGHT, color_rgb, mask);
-	exchange_run_inpainting(g_exchange, prompt, negative_prompt, seed, num_inference_steps, strength);
+	exchange_run_image_edit(g_exchange, model, prompt, negative_prompt, seed, num_inference_steps, guidance_scale,
+		qwen_acceleration, enable_safety_checker);
 
 	static_cast<paint_result_tool_t*>(app.tools["paint_result"].get())
 		->import_image(g_exchange.paint_result.colors, g_exchange.paint_result.width, g_exchange.paint_result.height);

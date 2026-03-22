@@ -23,7 +23,7 @@ void app_init(app_t& app) {
 	app.points_vbo.mode = GL_POINTS;
 	app.mask_vbo.mode = GL_TRIANGLES;
 
-	exchange_init(g_exchange, ENV_INPAINT_SERVER_URL, ENV_VGGT_SERVER_URL);
+	exchange_init(g_exchange, ENV_FAL_QUEUE_SERVER_URL, ENV_VGGT_SERVER_URL);
 
 	app_add_tools(app);
 	for (auto& [name, tool] : app.tools) {
